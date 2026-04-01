@@ -552,10 +552,416 @@ function Seguimiento(){
   </div>;
 }
 
+// PANTALLA 6 — BASE DE CONOCIMIENTO
+function BaseConocimiento(){
+  const [busq,setBusq]=useState("");
+  const [selAseg,setSelAseg]=useState(null);
+  const [selPlan,setSelPlan]=useState(null);
+  const [tab,setTab]=useState("planes");
+  const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",color:"#1e293b",fontFamily:"inherit",outline:"none"};
+
+  const ASEGURADORAS=[
+    {id:"ASSA",nombre:"ASSA Compañía de Seguros",logo:"🏢",color:"#1d4ed8",planes:[
+      {id:"assa-gold",nombre:"ASSA Gold Plus",tipo:"Individual / Familiar",prima:"$280/mes",red:"Amplia — 120+ centros",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"80%",copago:"$150",limite:"$500,000/año",notas:"Habitación semiprivada incluida"},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"80%",copago:"$100",limite:"$100,000/evento",notas:"Requiere preautorización"},
+        {servicio:"Consulta médica",cubre:true,pct:"70%",copago:"$25",limite:"Sin límite",notas:"Red preferida solamente"},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"80%",copago:"$0",limite:"$15,000/año",notas:"Orden médica requerida"},
+        {servicio:"Medicamentos",cubre:true,pct:"70%",copago:"$15",limite:"$8,000/año",notas:"Solo formulario ASSA"},
+        {servicio:"Maternidad",cubre:true,pct:"80%",copago:"$200",limite:"$25,000",notas:"Período de espera: 10 meses"},
+        {servicio:"Salud mental",cubre:false,pct:"—",copago:"—",limite:"—",notas:"Excluido en este plan"},
+        {servicio:"Odontología",cubre:false,pct:"—",copago:"—",limite:"—",notas:"Rider opcional disponible"},
+      ],exclusiones:["Preexistencias (primeros 24 meses)","Cirugía estética","Tratamientos experimentales","Lesiones autoinfligidas"],docs:["Formulario ASSA-PA-001","Carta de preautorización ASSA","Formato de reclamo ASSA-RC-003"]},
+      {id:"assa-basic",nombre:"ASSA Básico",tipo:"Individual",prima:"$120/mes",red:"Limitada — 45 centros",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"70%",copago:"$300",limite:"$100,000/año",notas:"Solo emergencias"},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"70%",copago:"$200",limite:"$50,000/evento",notas:"Preautorización obligatoria"},
+        {servicio:"Consulta médica",cubre:true,pct:"60%",copago:"$30",limite:"12 consultas/año",notas:""},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"60%",copago:"$20",limite:"$5,000/año",notas:""},
+        {servicio:"Medicamentos",cubre:false,pct:"—",copago:"—",limite:"—",notas:"No incluido"},
+        {servicio:"Maternidad",cubre:false,pct:"—",copago:"—",limite:"—",notas:"No incluido"},
+      ],exclusiones:["Preexistencias","Maternidad","Medicamentos ambulatorios","Rehabilitación","Prótesis"],docs:["Formulario ASSA-PA-001","Formato de reclamo ASSA-RC-003"]},
+    ]},
+    {id:"MAPFRE",nombre:"MAPFRE Panamá",logo:"🔴",color:"#dc2626",planes:[
+      {id:"mapfre-elite",nombre:"MAPFRE Elite Salud",tipo:"Individual / Familiar",prima:"$350/mes",red:"Internacional — 200+ centros",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"90%",copago:"$100",limite:"$1,000,000/año",notas:"Habitación privada"},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"90%",copago:"$75",limite:"$200,000/evento",notas:""},
+        {servicio:"Consulta médica",cubre:true,pct:"80%",copago:"$20",limite:"Sin límite",notas:"Incluye especialistas"},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"90%",copago:"$0",limite:"$25,000/año",notas:""},
+        {servicio:"Medicamentos",cubre:true,pct:"80%",copago:"$10",limite:"$12,000/año",notas:"Formulario abierto"},
+        {servicio:"Maternidad",cubre:true,pct:"90%",copago:"$150",limite:"$30,000",notas:"Espera: 12 meses"},
+        {servicio:"Salud mental",cubre:true,pct:"60%",copago:"$40",limite:"$5,000/año",notas:"Máx 20 sesiones/año"},
+        {servicio:"Odontología",cubre:true,pct:"50%",copago:"$30",limite:"$3,000/año",notas:"Preventivo y básico"},
+      ],exclusiones:["Cirugía estética","Tratamientos experimentales","Fertilización in vitro"],docs:["Formulario MAP-PRE-100","Solicitud de beneficios MAP-BEN-200","Carta de referencia médica"]},
+    ]},
+    {id:"CIGNA",nombre:"CIGNA Global Health",logo:"🌐",color:"#0891b2",planes:[
+      {id:"cigna-global",nombre:"CIGNA Global Care",tipo:"Internacional",prima:"$420/mes",red:"Global — sin restricciones",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"100%",copago:"$0",limite:"$2,000,000/año",notas:"Cualquier hospital del mundo"},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"100%",copago:"$0",limite:"Incluido en límite anual",notas:""},
+        {servicio:"Consulta médica",cubre:true,pct:"100%",copago:"$0",limite:"Sin límite",notas:"Libre elección"},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"100%",copago:"$0",limite:"Incluido",notas:""},
+        {servicio:"Medicamentos",cubre:true,pct:"100%",copago:"$0",limite:"$20,000/año",notas:""},
+        {servicio:"Maternidad",cubre:true,pct:"100%",copago:"$0",limite:"$50,000",notas:"Espera: 12 meses"},
+        {servicio:"Salud mental",cubre:true,pct:"100%",copago:"$0",limite:"$10,000/año",notas:""},
+        {servicio:"Evacuación médica",cubre:true,pct:"100%",copago:"$0",limite:"$100,000",notas:"Incluido"},
+      ],exclusiones:["Tratamientos experimentales","Cirugía estética","Guerra y terrorismo"],docs:["CIGNA Claim Form CF-01","Pre-authorization Request","Medical Report Template"]},
+    ]},
+    {id:"PALIG",nombre:"Pan-American Life (PALIG)",logo:"🌎",color:"#7c3aed",planes:[
+      {id:"palig-premium",nombre:"PALIG Premium Health",tipo:"Individual / Corporativo",prima:"$310/mes",red:"Regional — 150+ centros",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"85%",copago:"$125",limite:"$750,000/año",notas:""},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"85%",copago:"$100",limite:"$150,000/evento",notas:""},
+        {servicio:"Consulta médica",cubre:true,pct:"75%",copago:"$20",limite:"Sin límite",notas:""},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"85%",copago:"$0",limite:"$20,000/año",notas:""},
+        {servicio:"Medicamentos",cubre:true,pct:"75%",copago:"$10",limite:"$10,000/año",notas:""},
+        {servicio:"Maternidad",cubre:true,pct:"80%",copago:"$200",limite:"$28,000",notas:"Espera: 10 meses"},
+      ],exclusiones:["Preexistencias (12 meses)","Cirugía bariátrica","Tratamientos de fertilidad"],docs:["PALIG Form PA-100","Authorization Request PA-200","Claim Submission PA-300"]},
+    ]},
+    {id:"VUMI",nombre:"VUMI Group",logo:"🛡",color:"#ea580c",planes:[
+      {id:"vumi-intl",nombre:"VUMI International",tipo:"Internacional",prima:"$380/mes",red:"Global — 180+ centros",cobertura:[
+        {servicio:"Hospitalización",cubre:true,pct:"100%",copago:"$0 (deducible $500)",limite:"$1,500,000/año",notas:""},
+        {servicio:"Cirugía ambulatoria",cubre:true,pct:"100%",copago:"$0",limite:"Incluido",notas:""},
+        {servicio:"Consulta médica",cubre:true,pct:"90%",copago:"$15",limite:"Sin límite",notas:""},
+        {servicio:"Laboratorio y diagnóstico",cubre:true,pct:"100%",copago:"$0",limite:"$18,000/año",notas:""},
+        {servicio:"Medicamentos",cubre:true,pct:"90%",copago:"$10",limite:"$15,000/año",notas:""},
+        {servicio:"Maternidad",cubre:true,pct:"80%",copago:"$250",limite:"$35,000",notas:"Espera: 12 meses"},
+      ],exclusiones:["Deportes extremos","Cirugía estética","Abuso de sustancias"],docs:["VUMI Claim Form VCF-01","Pre-cert Request VPR-02","Medical Necessity Letter"]},
+    ]},
+  ];
+
+  const filtrados=ASEGURADORAS.filter(a=>!busq||a.nombre.toLowerCase().includes(busq.toLowerCase())||a.planes.some(p=>p.nombre.toLowerCase().includes(busq.toLowerCase())));
+
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Base de Conocimiento</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Coberturas, planes, exclusiones y documentos requeridos por aseguradora</div>
+
+    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}>
+      <input placeholder="🔍 Buscar aseguradora o plan..." value={busq} onChange={e=>setBusq(e.target.value)} style={{...ss,width:300}}/>
+      <Btn ch="📤 Subir Documento" v="sec"/>
+      <Btn ch="+ Agregar Aseguradora" style={{marginLeft:"auto"}}/>
+    </div>
+
+    {!selAseg&&<>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+        {[{l:"Aseguradoras Activas",v:ASEGURADORAS.length,ic:"🏢",bg:"#eff6ff",bo:"#93c5fd",co:"#1d4ed8"},{l:"Planes Registrados",v:ASEGURADORAS.reduce((a,b)=>a+b.planes.length,0),ic:"📋",bg:"#f0fdf4",bo:"#86efac",co:"#16a34a"},{l:"Documentos Cargados",v:23,ic:"📄",bg:"#fef9c3",bo:"#fde68a",co:"#a16207"}].map(k=>
+          <div key={k.l} style={{background:k.bg,border:"1.5px solid "+k.bo,borderRadius:10,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:22,marginBottom:4}}>{k.ic}</div>
+            <div style={{fontSize:28,fontWeight:800,color:k.co}}>{k.v}</div>
+            <div style={{fontSize:11,color:"#475569",fontWeight:600}}>{k.l}</div>
+          </div>
+        )}
+      </div>
+
+      {filtrados.map(aseg=><Card key={aseg.id} style={{marginBottom:12,overflow:"hidden"}}>
+        <div onClick={()=>setSelAseg(aseg)} style={{display:"flex",alignItems:"center",gap:14,padding:16,cursor:"pointer"}}>
+          <div style={{width:44,height:44,borderRadius:10,background:aseg.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{aseg.logo}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#1e293b"}}>{aseg.nombre}</div>
+            <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{aseg.planes.length} plan(es) registrado(s)</div>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {aseg.planes.map(p=><span key={p.id} style={{background:aseg.color+"15",color:aseg.color,padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:600}}>{p.nombre}</span>)}
+          </div>
+          <span style={{fontSize:14,color:"#94a3b8",marginLeft:8}}>→</span>
+        </div>
+      </Card>)}
+
+      <Card style={{marginTop:20,border:"2px dashed #e2e8f0",background:"#f8fafc",borderTop:"none",boxShadow:"none"}}>
+        <div style={{padding:24,textAlign:"center"}}>
+          <div style={{fontSize:28,marginBottom:8}}>📂</div>
+          <div style={{fontSize:13,fontWeight:600,color:"#475569",marginBottom:4}}>Documentos recientes cargados</div>
+          <div style={{fontSize:11,color:"#94a3b8",marginBottom:12}}>Arrastra archivos aquí o usa el botón "Subir Documento"</div>
+          {[{n:"Tabla de beneficios ASSA Gold 2026.pdf",f:"28/03/2026",s:"2.4 MB"},{n:"Formulario preautorización MAPFRE v3.pdf",f:"25/03/2026",s:"340 KB"},{n:"Lista de exclusiones CIGNA Global 2026.xlsx",f:"22/03/2026",s:"128 KB"},{n:"Manual de reclamos PALIG - actualizado.pdf",f:"20/03/2026",s:"1.8 MB"}].map(d=>
+            <div key={d.n} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"white",borderRadius:7,marginBottom:4,border:"1px solid #e2e8f0",textAlign:"left"}}>
+              <span style={{fontSize:16}}>📄</span>
+              <div style={{flex:1}}><div style={{fontSize:11,fontWeight:600,color:"#1e293b"}}>{d.n}</div><div style={{fontSize:10,color:"#94a3b8"}}>{d.f} &middot; {d.s}</div></div>
+              <Btn ch="👁 Ver" v="sec" style={{fontSize:10,padding:"3px 8px"}}/>
+              <Btn ch="⬇" v="sec" style={{fontSize:10,padding:"3px 8px"}}/>
+            </div>
+          )}
+        </div>
+      </Card>
+    </>}
+
+    {selAseg&&!selPlan&&<>
+      <Btn ch={"← Volver a aseguradoras"} v="sec" onClick={()=>setSelAseg(null)} style={{marginBottom:16}}/>
+      <div style={{background:`linear-gradient(135deg,${selAseg.color}22,${selAseg.color}08)`,border:"1.5px solid "+selAseg.color+"33",borderRadius:12,padding:20,marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+          <div style={{width:48,height:48,borderRadius:10,background:selAseg.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{selAseg.logo}</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,color:"#1e293b"}}>{selAseg.nombre}</div>
+            <div style={{fontSize:11,color:"#64748b"}}>SLA de respuesta: <b>{ASEG_SLA[selAseg.id]} días</b> &middot; {selAseg.planes.length} plan(es)</div>
+          </div>
+        </div>
+      </div>
+
+      <ST ch="Planes disponibles"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
+        {selAseg.planes.map(plan=><Card key={plan.id} style={{cursor:"pointer",overflow:"hidden"}} ch={
+          <div onClick={()=>setSelPlan(plan)} style={{padding:16}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#1e293b",marginBottom:6}}>{plan.nombre}</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+              <span style={{background:"#f1f5f9",padding:"2px 8px",borderRadius:20,fontSize:10,color:"#475569"}}>{plan.tipo}</span>
+              <span style={{background:"#dcfce7",color:"#16a34a",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600}}>{plan.prima}</span>
+            </div>
+            <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>Red: {plan.red}</div>
+            <div style={{fontSize:11,color:"#64748b"}}>{plan.cobertura.filter(c=>c.cubre).length} servicios cubiertos &middot; {plan.exclusiones.length} exclusiones</div>
+            <div style={{display:"flex",gap:6,marginTop:10}}>
+              {plan.cobertura.slice(0,4).map(c=><span key={c.servicio} style={{width:8,height:8,borderRadius:"50%",background:c.cubre?"#16a34a":"#dc2626"}}/>)}
+            </div>
+          </div>
+        }/>)}
+      </div>
+    </>}
+
+    {selAseg&&selPlan&&<>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <Btn ch={"← "+selAseg.nombre} v="sec" onClick={()=>setSelPlan(null)}/>
+      </div>
+      <div style={{background:`linear-gradient(135deg,${NAVY},${TEAL})`,color:"white",padding:20,borderRadius:12,marginBottom:16}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>{selPlan.nombre}</div>
+        <div style={{display:"flex",gap:16,fontSize:11,color:"rgba(255,255,255,.7)"}}>
+          <span>{selPlan.tipo}</span><span>{selPlan.prima}</span><span>Red: {selPlan.red}</span>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:2,marginBottom:16,background:"#f1f5f9",padding:3,borderRadius:8,width:"fit-content"}}>
+        {[["planes","Tabla de Coberturas"],["excl","Exclusiones"],["docs","Documentos Requeridos"]].map(([v,l])=>
+          <div key={v} onClick={()=>setTab(v)} style={{padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:tab===v?"white":"transparent",color:tab===v?NAVY:"#64748b",boxShadow:tab===v?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{l}</div>
+        )}
+      </div>
+
+      {tab==="planes"&&<Card ch={<div style={{overflow:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead>
+            <tr>{["Servicio","Cubre","Cobertura","Copago","Límite","Notas"].map(h=><th key={h} style={{background:NAVY,color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:.8,padding:"10px 12px",textAlign:"left"}}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {selPlan.cobertura.map(c=><tr key={c.servicio}>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontWeight:600,color:"#1e293b"}}>{c.servicio}</td>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><span style={{background:c.cubre?"#dcfce7":"#fee2e2",color:c.cubre?"#16a34a":"#dc2626",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600}}>{c.cubre?"✅ Sí":"❌ No"}</span></td>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontWeight:700,color:TEAL}}>{c.pct}</td>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",color:"#475569"}}>{c.copago}</td>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",color:"#475569",fontSize:11}}>{c.limite}</td>
+              <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",color:"#94a3b8",fontSize:11,fontStyle:"italic"}}>{c.notas||"—"}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>}/>}
+
+      {tab==="excl"&&<Card ch={<div style={{padding:16}}>
+        <ST ch="Exclusiones del plan"/>
+        {selPlan.exclusiones.map((ex,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,marginBottom:6}}>
+          <span style={{color:"#dc2626",fontWeight:700}}>✗</span>
+          <span style={{fontSize:12,color:"#475569"}}>{ex}</span>
+        </div>)}
+        <div style={{marginTop:16,background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:12,fontSize:11,color:"#92400e"}}>
+          ⚠ <b>Importante:</b> Siempre verificar la póliza individual del paciente. Las exclusiones pueden variar según enmiendas, riders o condiciones especiales negociadas.
+        </div>
+      </div>}/>}
+
+      {tab==="docs"&&<Card ch={<div style={{padding:16}}>
+        <ST ch="Documentos requeridos para reclamo"/>
+        {selPlan.docs.map((doc,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:7,marginBottom:6}}>
+          <span style={{fontSize:16}}>📄</span>
+          <div style={{flex:1,fontSize:12,fontWeight:600,color:"#1e293b"}}>{doc}</div>
+          <Btn ch="⬇ Descargar" v="sec" style={{fontSize:10,padding:"4px 10px"}}/>
+        </div>)}
+        <div style={{marginTop:12}}>
+          <Btn ch="📤 Subir nuevo documento a este plan" v="sec"/>
+        </div>
+      </div>}/>}
+    </>}
+  </div>;
+}
+
+// PANTALLA 7 — CONFIGURACIÓN
+function Configuracion(){
+  const [tab,setTab]=useState("equipo");
+  const [slaEdits,setSlaEdits]=useState({...ASEG_SLA});
+  const [notifs,setNotifs]=useState({email:true,sistema:true,slack:false,whatsapp:true,recordatorioAuto:true,diasRecordatorio:3,alertaSLA:true,diasAlertaSLA:5});
+  const toggleNotif=k=>setNotifs(p=>({...p,[k]:!p[k]}));
+
+  const equipo=[
+    {nombre:"Steffany Peralta",rol:"Analista Senior",email:"s.peralta@minimed.com",casos:14,activo:true},
+    {nombre:"Vivi González",rol:"Analista",email:"v.gonzalez@minimed.com",casos:10,activo:true},
+    {nombre:"Elianis Castillo",rol:"Analista",email:"e.castillo@minimed.com",casos:9,activo:true},
+    {nombre:"Leslie García",rol:"Asistente Administrativo",email:"l.garcia@minimed.com",casos:5,activo:true},
+    {nombre:"Ramón Castillo",rol:"Supervisor",email:"r.castillo@minimed.com",casos:0,activo:true},
+    {nombre:"María Fernández",rol:"Analista",email:"m.fernandez@minimed.com",casos:0,activo:false},
+  ];
+
+  const flujos=[
+    {id:1,nombre:"Nuevo Ingreso",siguiente:"Validación de Póliza",auto:true,desc:"Al registrar un caso nuevo, se mueve automáticamente a validación"},
+    {id:2,nombre:"Validación de Póliza",siguiente:"Preautorización",auto:false,desc:"Requiere verificación manual de cobertura y exclusiones"},
+    {id:3,nombre:"Preautorización",siguiente:"En Análisis de Cuenta",auto:true,desc:"Al recibir aprobación de la aseguradora, avanza automáticamente"},
+    {id:4,nombre:"En Análisis de Cuenta",siguiente:"Reclamo Presentado",auto:false,desc:"El analista valida checklist y motor antes de enviar"},
+    {id:5,nombre:"Reclamo Presentado",siguiente:"En espera de pago",auto:true,desc:"Al confirmar recepción por la aseguradora"},
+    {id:6,nombre:"En espera de pago",siguiente:"Cobrado",auto:true,desc:"Al registrar el pago en el sistema"},
+  ];
+
+  const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",fontFamily:"inherit",outline:"none"};
+  const TABS=[["equipo","👥 Equipo"],["sla","⏱ SLA"],["flujo","🔄 Flujo de Trabajo"],["notif","🔔 Notificaciones"],["gral","⚙ General"]];
+
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Configuración</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Administración del sistema, equipo, SLAs y flujos de trabajo</div>
+
+    <div style={{display:"flex",gap:2,marginBottom:16,background:"#f1f5f9",padding:3,borderRadius:8,width:"fit-content",flexWrap:"wrap"}}>
+      {TABS.map(([v,l])=><div key={v} onClick={()=>setTab(v)} style={{padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:tab===v?"white":"transparent",color:tab===v?NAVY:"#64748b",boxShadow:tab===v?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{l}</div>)}
+    </div>
+
+    {tab==="equipo"&&<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <ST ch="Equipo de Cartera"/>
+        <Btn ch="+ Agregar Miembro"/>
+      </div>
+      <Card ch={<div style={{overflow:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr>{["","Nombre","Rol","Email","Casos Asignados","Estado","Acciones"].map(h=><th key={h} style={{background:NAVY,color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:.8,padding:"10px 12px",textAlign:"left"}}>{h}</th>)}</tr></thead>
+          <tbody>{equipo.map(m=><tr key={m.email}>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><Av name={m.nombre}/></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontWeight:600,color:"#1e293b"}}>{m.nombre}</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><span style={{background:m.rol==="Supervisor"?"#e0e7ff":m.rol==="Analista Senior"?"#dcfce7":"#f1f5f9",color:m.rol==="Supervisor"?"#3730a3":m.rol==="Analista Senior"?"#16a34a":"#475569",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600}}>{m.rol}</span></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontSize:11,color:"#64748b"}}>{m.email}</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><span style={{fontWeight:700,color:m.casos>10?"#d97706":"#475569"}}>{m.casos}</span></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><span style={{background:m.activo?"#dcfce7":"#fee2e2",color:m.activo?"#16a34a":"#dc2626",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600}}>{m.activo?"Activo":"Inactivo"}</span></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><div style={{display:"flex",gap:6}}><Btn ch="✏" v="sec" style={{fontSize:10,padding:"3px 8px"}}/><Btn ch="🗑" v="dan" style={{fontSize:10,padding:"3px 8px"}}/></div></td>
+          </tr>)}</tbody>
+        </table>
+      </div>}/>
+    </>}
+
+    {tab==="sla"&&<>
+      <ST ch="SLA por Aseguradora (días hábiles para respuesta)"/>
+      <Card ch={<div style={{padding:16}}>
+        {Object.entries(slaEdits).map(([aseg,dias])=><div key={aseg} style={{display:"flex",alignItems:"center",gap:12,marginBottom:12,padding:"10px 14px",background:"#f8fafc",borderRadius:8}}>
+          <span style={{background:"#dbeafe",color:"#1d4ed8",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,width:70,textAlign:"center"}}>{aseg}</span>
+          <div style={{flex:1}}>
+            <div style={{height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}>
+              <div style={{height:"100%",background:dias<=15?"#16a34a":dias<=25?"#d97706":"#dc2626",width:Math.min(100,(dias/45)*100)+"%",borderRadius:3}}/>
+            </div>
+          </div>
+          <input type="number" value={dias} onChange={e=>setSlaEdits(p=>({...p,[aseg]:Number(e.target.value)}))} style={{...ss,width:60,textAlign:"center",fontWeight:700}}/>
+          <span style={{fontSize:11,color:"#64748b"}}>días</span>
+        </div>)}
+        <div style={{display:"flex",gap:10,marginTop:12,justifyContent:"flex-end"}}>
+          <Btn ch="Restaurar Defaults" v="sec" onClick={()=>setSlaEdits({...ASEG_SLA})}/>
+          <Btn ch="💾 Guardar Cambios"/>
+        </div>
+      </div>}/>
+    </>}
+
+    {tab==="flujo"&&<>
+      <ST ch="Flujo de estados del caso"/>
+      <div style={{position:"relative"}}>
+        {flujos.map((f,i)=><div key={f.id} style={{display:"flex",alignItems:"center",gap:12,marginBottom:i<flujos.length-1?0:0}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:30}}>
+            <div style={{width:28,height:28,borderRadius:"50%",background:TEAL,color:"white",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,zIndex:1}}>{f.id}</div>
+            {i<flujos.length-1&&<div style={{width:2,height:40,background:"#e2e8f0"}}/>}
+          </div>
+          <Card style={{flex:1,marginBottom:i<flujos.length-1?8:0,borderTop:"none"}} ch={<div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#1e293b"}}>{f.nombre} <span style={{color:"#94a3b8",fontWeight:400}}>→</span> <span style={{color:TEAL}}>{f.siguiente}</span></div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{f.desc}</div>
+            </div>
+            <span style={{background:f.auto?"#dcfce7":"#fef9c3",color:f.auto?"#16a34a":"#a16207",padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:600}}>{f.auto?"⚡ Auto":"✋ Manual"}</span>
+          </div>}/>
+        </div>)}
+      </div>
+      <div style={{marginTop:16,background:"#eff6ff",border:"1px solid #93c5fd",borderRadius:8,padding:12,fontSize:11,color:"#1d4ed8"}}>
+        💡 <b>Tip:</b> Los pasos automáticos se ejecutan cuando el sistema detecta el evento correspondiente. Los pasos manuales requieren que el analista cambie el estado.
+      </div>
+    </>}
+
+    {tab==="notif"&&<>
+      <ST ch="Canales de Notificación"/>
+      <Card ch={<div style={{padding:16}}>
+        {[{k:"email",l:"📧 Correo Electrónico",d:"Notificaciones por email a analistas y supervisores"},{k:"sistema",l:"🔔 Notificaciones del Sistema",d:"Alertas dentro de ClaimFlow"},{k:"whatsapp",l:"📱 WhatsApp",d:"Mensajes automáticos a pacientes y proveedores"},{k:"slack",l:"💬 Slack",d:"Integración con canal #cartera del equipo"}].map(c=>
+          <div key={c.k} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#f8fafc",borderRadius:8,marginBottom:8}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{c.l}</div>
+              <div style={{fontSize:11,color:"#64748b"}}>{c.d}</div>
+            </div>
+            <div onClick={()=>toggleNotif(c.k)} style={{width:44,height:24,borderRadius:12,background:notifs[c.k]?"#16a34a":"#e2e8f0",cursor:"pointer",padding:2,transition:"background .2s"}}>
+              <div style={{width:20,height:20,borderRadius:10,background:"white",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transform:notifs[c.k]?"translateX(20px)":"translateX(0)",transition:"transform .2s"}}/>
+            </div>
+          </div>
+        )}
+      </div>}/>
+
+      <div style={{height:16}}/>
+      <ST ch="Reglas de Automatización"/>
+      <Card ch={<div style={{padding:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#f8fafc",borderRadius:8,marginBottom:8}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>⏰ Recordatorios automáticos de documentos pendientes</div>
+            <div style={{fontSize:11,color:"#64748b"}}>Envía recordatorio cuando un documento lleva más de X días pendiente</div>
+          </div>
+          <input type="number" value={notifs.diasRecordatorio} onChange={e=>setNotifs(p=>({...p,diasRecordatorio:Number(e.target.value)}))} style={{...ss,width:50,textAlign:"center"}}/>
+          <span style={{fontSize:11,color:"#64748b"}}>días</span>
+          <div onClick={()=>toggleNotif("recordatorioAuto")} style={{width:44,height:24,borderRadius:12,background:notifs.recordatorioAuto?"#16a34a":"#e2e8f0",cursor:"pointer",padding:2}}>
+            <div style={{width:20,height:20,borderRadius:10,background:"white",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transform:notifs.recordatorioAuto?"translateX(20px)":"translateX(0)",transition:"transform .2s"}}/>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#f8fafc",borderRadius:8}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>🚨 Alerta de SLA próximo a vencer</div>
+            <div style={{fontSize:11,color:"#64748b"}}>Notifica cuando faltan X días para vencimiento del SLA</div>
+          </div>
+          <input type="number" value={notifs.diasAlertaSLA} onChange={e=>setNotifs(p=>({...p,diasAlertaSLA:Number(e.target.value)}))} style={{...ss,width:50,textAlign:"center"}}/>
+          <span style={{fontSize:11,color:"#64748b"}}>días</span>
+          <div onClick={()=>toggleNotif("alertaSLA")} style={{width:44,height:24,borderRadius:12,background:notifs.alertaSLA?"#16a34a":"#e2e8f0",cursor:"pointer",padding:2}}>
+            <div style={{width:20,height:20,borderRadius:10,background:"white",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transform:notifs.alertaSLA?"translateX(20px)":"translateX(0)",transition:"transform .2s"}}/>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:16,justifyContent:"flex-end"}}>
+          <Btn ch="💾 Guardar Configuración"/>
+        </div>
+      </div>}/>
+    </>}
+
+    {tab==="gral"&&<>
+      <ST ch="Información del Sistema"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+        <Card ch={<div style={{padding:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#1e293b",marginBottom:10}}>🏥 Datos de la Clínica</div>
+          {[["Nombre","Minimed Panamá"],["RUC","155-678-12345"],["Dirección","Vía España, Torre Medical, Piso 8"],["Teléfono","+507 263-4500"],["Contacto","Dra. Miriam Ortega — Directora Administrativa"]].map(([k,v])=>
+            <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f1f5f9",fontSize:11}}>
+              <span style={{color:"#64748b"}}>{k}</span>
+              <span style={{color:"#1e293b",fontWeight:600}}>{v}</span>
+            </div>
+          )}
+        </div>}/>
+        <Card ch={<div style={{padding:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#1e293b",marginBottom:10}}>📊 Estadísticas del Sistema</div>
+          {[["Versión","ClaimFlow v1.0 — Prototipo"],["Casos totales procesados","142"],["Casos activos","38"],["Usuarios activos","5"],["Última actualización","31/03/2026, 09:42 AM"],["Uptime","99.8%"]].map(([k,v])=>
+            <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f1f5f9",fontSize:11}}>
+              <span style={{color:"#64748b"}}>{k}</span>
+              <span style={{color:"#1e293b",fontWeight:600}}>{v}</span>
+            </div>
+          )}
+        </div>}/>
+      </div>
+      <Card ch={<div style={{padding:16}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#1e293b",marginBottom:10}}>🔐 Seguridad y Acceso</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+          {[{l:"Cambiar Contraseña",ic:"🔑",d:"Actualizar credenciales de acceso"},{l:"Auditoría de Acceso",ic:"📋",d:"Ver log de accesos al sistema"},{l:"Exportar Datos",ic:"📦",d:"Descargar backup de la base de datos"}].map(a=>
+            <div key={a.l} onClick={()=>{}} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:14,cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:20,marginBottom:6}}>{a.ic}</div>
+              <div style={{fontSize:11,fontWeight:600,color:"#1e293b",marginBottom:2}}>{a.l}</div>
+              <div style={{fontSize:10,color:"#94a3b8"}}>{a.d}</div>
+            </div>
+          )}
+        </div>
+      </div>}/>
+    </>}
+  </div>;
+}
+
 function App(){
   const [scr,setScr]=useState("dash");
   const NAV=[["dash","📊","Dashboard Ejecutivo"],["casos","📋","Casos Activos"],["check","✅","Checklist Documental"],["motor","🚦","Motor de Validación"],["seg","💰","Seguimiento y Cobro"]];
-  const SCREENS={dash:<Dashboard/>,casos:<Casos/>,check:<Checklist setScr={setScr}/>,motor:<Motor/>,seg:<Seguimiento/>};
+  const SYS_NAV=[["base","📚","Base de Conocimiento"],["config","⚙","Configuración"]];
+  const SCREENS={dash:<Dashboard/>,casos:<Casos/>,check:<Checklist setScr={setScr}/>,motor:<Motor/>,seg:<Seguimiento/>,base:<BaseConocimiento/>,config:<Configuracion/>};
   return <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",fontFamily:"system-ui,sans-serif",background:"#F1F5F9"}}>
     <div style={{background:NAVY,color:"white",height:52,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid "+TEAL,zIndex:100}}>
       <div style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:-.3}}>
@@ -581,7 +987,9 @@ function App(){
         <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"8px 16px"}}/>
         <div style={{padding:"8px 0"}}>
           <div style={{fontSize:9,fontWeight:700,color:"#4b6cb7",letterSpacing:1.5,textTransform:"uppercase",padding:"0 16px 8px"}}>Sistema</div>
-          {[["📚","Base de Conocimiento"],["⚙","Configuración"]].map(([ic,lb])=><div key={lb} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:"#94a3b8",fontSize:12,fontWeight:500}}><span style={{fontSize:14,width:18,textAlign:"center"}}>{ic}</span>{lb}</div>)}
+          {SYS_NAV.map(([id,ic,lb])=><div key={id} onClick={()=>setScr(id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:scr===id?TEAL2:"#94a3b8",fontSize:12,fontWeight:500,background:scr===id?"rgba(0,168,150,.12)":"transparent",borderLeft:scr===id?"3px solid "+TEAL2:"3px solid transparent"}}>
+            <span style={{fontSize:14,width:18,textAlign:"center"}}>{ic}</span>{lb}
+          </div>)}
         </div>
         <div style={{padding:14,marginTop:"auto"}}>
           <div style={{background:"rgba(0,168,150,.1)",border:"1px solid rgba(0,168,150,.2)",borderRadius:8,padding:10}}>
