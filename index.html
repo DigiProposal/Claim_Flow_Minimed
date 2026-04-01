@@ -109,8 +109,8 @@ function Btn({ch,v="pri",onClick,dis,style={}}){
   const st={pri:{background:TEAL,color:"white"},sec:{background:"#f1f5f9",color:"#475569",border:"1px solid #e2e8f0"},suc:{background:"#dcfce7",color:"#16a34a"},dan:{background:"#fee2e2",color:"#dc2626"},dis:{background:"#e2e8f0",color:"#94a3b8",cursor:"not-allowed"}};
   return <button onClick={dis?undefined:onClick} style={{padding:"6px 13px",borderRadius:7,fontSize:11,fontWeight:600,border:"none",cursor:dis?"not-allowed":"pointer",display:"inline-flex",alignItems:"center",gap:5,fontFamily:"inherit",...(dis?st.dis:st[v]),...style}}>{ch}</button>;
 }
-function Card({ch,style={}}){
-  return <div style={{background:"white",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:`3px solid ${TEAL}`,...style}}>{ch}</div>;
+function Card({ch,children,style={}}){
+  return <div style={{background:"white",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:`3px solid ${TEAL}`,...style}}>{ch || children}</div>;
 }
 function ST({ch}){
   return <div style={{fontSize:11,fontWeight:700,color:NAVY,textTransform:"uppercase",letterSpacing:".8px",marginBottom:10}}>{ch}</div>;
