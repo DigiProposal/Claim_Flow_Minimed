@@ -1,3 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClaimFlow Minimed</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    table { border-collapse: collapse; }
+    button { font-family: inherit; }
+    select, input, textarea { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
 const { useState, useMemo } = React;
 
 const NAVY = "#1C2951";
@@ -94,7 +116,6 @@ function ST({ch}){
   return <div style={{fontSize:11,fontWeight:700,color:NAVY,textTransform:"uppercase",letterSpacing:".8px",marginBottom:10}}>{ch}</div>;
 }
 
-// DRAWER
 function Drawer({caso,onClose}){
   const [t,setT]=useState("res");
   const hist=[
@@ -116,7 +137,7 @@ function Drawer({caso,onClose}){
               <SemBadge s={caso.semaforo}/>
             </div>
           </div>
-          <button onClick={onClose} style={{background:"rgba(255,255,255,.1)",border:"none",color:"white",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:14}}>✕</button>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.1)",border:"none",color:"white",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:14}}>&#x2715;</button>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(255,255,255,.08)",padding:3,borderRadius:7,width:"fit-content"}}>
           {[["res","Resumen"],["ch","Checklist"],["hi","Historial"]].map(([v,l])=>
@@ -136,7 +157,7 @@ function Drawer({caso,onClose}){
           </div>
           <div style={{background:"#f8fafc",borderRadius:8,padding:12,marginBottom:12}}>
             <ST ch="Preautorización"/>
-            <div style={{fontSize:11,color:"#475569"}}><b>N°:</b> {caso.preautNumero||"—"} &nbsp;·&nbsp; <b>Estado:</b> {caso.preautEstado} {caso.cobertura&&<>&nbsp;·&nbsp;<b>Cobertura:</b> {caso.cobertura}</>}</div>
+            <div style={{fontSize:11,color:"#475569"}}><b>N°:</b> {caso.preautNumero||"—"} &nbsp;&middot;&nbsp; <b>Estado:</b> {caso.preautEstado} {caso.cobertura&&<>&nbsp;&middot;&nbsp;<b>Cobertura:</b> {caso.cobertura}</>}</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
             <div style={{background:"#eff6ff",borderRadius:8,padding:10,textAlign:"center"}}>
@@ -175,12 +196,10 @@ function Drawer({caso,onClose}){
   </>;
 }
 
-// PANTALLA 1 — DASHBOARD
 function Dashboard(){
   return <div>
     <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2,letterSpacing:-.4}}>Dashboard Ejecutivo</div>
-    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Vista gerencial en tiempo real · 31 Abr 2026, 09:42 AM</div>
-
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Vista gerencial en tiempo real &middot; 31 Abr 2026, 09:42 AM</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:14}}>
       {[
         {l:"Cartera Total",v:"$142,800",s:"38 casos activos",t:"↑ +12% vs mes ant.",c:NAVY,up:true},
@@ -194,7 +213,6 @@ function Dashboard(){
         <div style={{fontSize:11,fontWeight:600,color:k.up?"#16a34a":"#dc2626",marginTop:6}}>{k.t}</div>
       </div>}/>)}
     </div>
-
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
       {[
         {s:"verde",n:8,l:"Listos para envío",m:"$28,400",bg:"#f0fdf4",bo:"#16a34a",c:"#15803d"},
@@ -207,7 +225,6 @@ function Dashboard(){
         <div style={{fontSize:12,color:"#64748b",fontWeight:700}}>{s.m}</div>
       </div>)}
     </div>
-
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
       <Card ch={<div style={{padding:16}}>
         <ST ch="Cartera por Aseguradora"/>
@@ -239,7 +256,6 @@ function Dashboard(){
         </div>}/>
       </div>
     </div>
-
     <Card ch={<div style={{padding:16}}>
       <ST ch="KPIs de Calidad del Proceso"/>
       {[{l:"% Aprobados 1er Envío",v:74,m:"meta: 85%",c:"#dc2626"},{l:"% Glosas / Rechazos",v:18,m:"meta: <10%",c:"#dc2626"},{l:"Tasa de Recuperación",v:91.2,m:"meta: 95%",c:"#d97706"}].map(k=>
@@ -256,7 +272,6 @@ function Dashboard(){
   </div>;
 }
 
-// PANTALLA 2 — CASOS ACTIVOS
 function Casos(){
   const [fA,setFA]=useState("Todas");
   const [fS,setFS]=useState("Todos");
@@ -275,7 +290,7 @@ function Casos(){
   }),[fA,fS,busq,tab]);
 
   const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",color:"#1e293b",fontFamily:"inherit",outline:"none"};
-  const tabs=[["todos",`Todos (${CASOS.length})`],["bloq",`🔴 Bloqueados (${CASOS.filter(c=>c.semaforo==="rojo").length})`],["act",`Activos (${CASOS.filter(c=>c.estado!=="Cobrado").length})`],["cob",`Cobrados (${CASOS.filter(c=>c.estado==="Cobrado").length})`]];
+  const tabs=[["todos","Todos ("+CASOS.length+")"],["bloq","🔴 Bloqueados ("+CASOS.filter(c=>c.semaforo==="rojo").length+")"],["act","Activos ("+CASOS.filter(c=>c.estado!=="Cobrado").length+")"],["cob","Cobrados ("+CASOS.filter(c=>c.estado==="Cobrado").length+")"]];
 
   return <div>
     <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Casos Activos</div>
@@ -322,13 +337,12 @@ function Casos(){
   </div>;
 }
 
-// PANTALLA 3 — CHECKLIST
 function Checklist({setScr}){
   const [exp,setExp]=useState({});
   const icons={1:"📋",2:"📄",3:"💰",4:"🧾",5:"📂",6:"🔬",7:"✍️"};
   return <div>
     <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Checklist Documental</div>
-    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Caso 2026-0312-ASSA · Diego Martínez</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Caso 2026-0312-ASSA &middot; Diego Martínez</div>
     <div style={{background:`linear-gradient(135deg,${NAVY},${TEAL})`,color:"white",padding:18,borderRadius:10,marginBottom:16}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
         {[["Caso","2026-0312-ASSA"],["Paciente","Diego Martínez"],["Aseguradora","ASSA"],["Cédula","8-456-789"],["Tipo Servicio","Hospitalización"],["Analista","Steffany Peralta"]].map(([k,v])=>
@@ -401,7 +415,6 @@ function Checklist({setScr}){
   </div>;
 }
 
-// PANTALLA 4 — MOTOR DE VALIDACIÓN
 function Motor(){
   const [reglas,setReglas]=useState(REGLAS_INIT);
   const [ejec,setEjec]=useState(false);
@@ -409,16 +422,16 @@ function Motor(){
   const [conf,setConf]=useState(false);
   const alertas=reglas.filter(r=>r.tipo==="alerta"&&!r.res).length;
   const res=alertas>0?"amarillo":"verde";
-  const HERO={verde:{ic:"✅",ti:"RECLAMO LISTO PARA ENVÍO",su:"Todas las reglas verificadas correctamente",bg:"#f0fdf4",bo:"#16a34a",co:"#15803d"},amarillo:{ic:"⚠️",ti:"RECLAMO CON OBSERVACIONES",su:`${alertas} regla${alertas!==1?"s":""} requieren atención antes del envío`,bg:"#fffbeb",bo:"#d97706",co:"#b45309"}};
+  const HERO={verde:{ic:"✅",ti:"RECLAMO LISTO PARA ENVÍO",su:"Todas las reglas verificadas correctamente",bg:"#f0fdf4",bo:"#16a34a",co:"#15803d"},amarillo:{ic:"⚠️",ti:"RECLAMO CON OBSERVACIONES",su:alertas+" regla"+(alertas!==1?"s":"")+" requieren atención antes del envío",bg:"#fffbeb",bo:"#d97706",co:"#b45309"}};
   const h=HERO[res];
   const run=()=>{setEjec(true);setListo(false);setTimeout(()=>{setEjec(false);setListo(true);},1600);};
   const resolver=id=>setReglas(r=>r.map(x=>x.id===id?{...x,res:true}:x));
   return <div>
     <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Motor de Validación</div>
-    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>10 reglas de consistencia automáticas · Caso 2026-0312-ASSA — Diego Martínez</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>10 reglas de consistencia automáticas &middot; Caso 2026-0312-ASSA — Diego Martínez</div>
     <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:16}}>
       <div style={{background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"10px 16px",flex:1,fontSize:11,color:"#64748b"}}>
-        <b>Caso:</b> 2026-0312-ASSA &nbsp;·&nbsp; <b>Paciente:</b> Diego Martínez &nbsp;·&nbsp; <b>Aseguradora:</b> ASSA &nbsp;·&nbsp; <b>Monto:</b> $3,480
+        <b>Caso:</b> 2026-0312-ASSA &nbsp;&middot;&nbsp; <b>Paciente:</b> Diego Martínez &nbsp;&middot;&nbsp; <b>Aseguradora:</b> ASSA &nbsp;&middot;&nbsp; <b>Monto:</b> $3,480
       </div>
       <Btn ch={ejec?<span>⚙ Validando...</span>:"▶ Ejecutar Validación"} onClick={run} dis={ejec} style={{minWidth:170}}/>
     </div>
@@ -429,7 +442,7 @@ function Motor(){
         <div style={{fontSize:12,color:"#64748b",marginTop:4}}>{h.su}</div>
         {res==="amarillo"&&<div style={{marginTop:10,fontSize:11,color:"#92400e",background:"rgba(217,119,6,.1)",padding:"6px 12px",borderRadius:6,display:"inline-block"}}>Puede aprobarse con advertencias activas documentadas</div>}
       </div>
-      <ST ch={`Resultado por Regla (${reglas.length} verificaciones)`}/>
+      <ST ch={"Resultado por Regla ("+reglas.length+" verificaciones)"}/>
       {reglas.map(r=>{
         const ok=r.tipo==="ok"||r.res;
         return <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:ok?"#f0fdf4":"#fffbeb",border:`1px solid ${ok?"#bbf7d0":"#fde68a"}`,borderRadius:7,marginBottom:6}}>
@@ -463,7 +476,6 @@ function Motor(){
   </div>;
 }
 
-// PANTALLA 5 — SEGUIMIENTO Y COBRO
 function Seguimiento(){
   const [tab,setTab]=useState("pres");
   const [modal,setModal]=useState(null);
@@ -485,22 +497,22 @@ function Seguimiento(){
   const cobrados=CASOS.filter(c=>c.estado==="Cobrado");
   const guardar=()=>{if(!txt)return;setGuardados(p=>[{id:modal.id,canal,txt,f:new Date().toLocaleDateString("es-PA")},...p]);setModal(null);setTxt("");};
   const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",fontFamily:"inherit",outline:"none",width:"100%"};
-  const TABS=[["pres",`Presentados (${reclamos.length})`],["glosas",`Con Glosa (${glosas.length})`],["cob",`Cobrados (${cobrados.length})`]];
-  const SlaBar=({dias,sla})=>{const pct=Math.min(100,(dias/sla)*100);const c=dias>sla?"#dc2626":dias>sla-5?"#d97706":"#16a34a";return <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:80,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",background:c,width:pct+"%"}}/></div><span style={{fontSize:10,color:c,fontWeight:700,fontFamily:"monospace"}}>{dias>sla?`+${dias-sla}d 🔴`:`${sla-dias}d rest.`}</span></div>;};
+  const TABS=[["pres","Presentados ("+reclamos.length+")"],["glosas","Con Glosa ("+glosas.length+")"],["cob","Cobrados ("+cobrados.length+")"]];
+  const SlaBar=({dias,sla})=>{const pct=Math.min(100,(dias/sla)*100);const c=dias>sla?"#dc2626":dias>sla-5?"#d97706":"#16a34a";return <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:80,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",background:c,width:pct+"%"}}/></div><span style={{fontSize:10,color:c,fontWeight:700,fontFamily:"monospace"}}>{dias>sla?"+"+String(dias-sla)+"d 🔴":String(sla-dias)+"d rest."}</span></div>;};
   return <div>
     <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Seguimiento y Cobro</div>
-    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Control de reclamos presentados · SLA por aseguradora · Gestión de glosas</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Control de reclamos presentados &middot; SLA por aseguradora &middot; Gestión de glosas</div>
     <div style={{display:"flex",gap:2,marginBottom:14,background:"#f1f5f9",padding:3,borderRadius:8,width:"fit-content"}}>
       {TABS.map(([v,l])=><div key={v} onClick={()=>setTab(v)} style={{padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:tab===v?"white":"transparent",color:tab===v?NAVY:"#64748b",boxShadow:tab===v?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{l}</div>)}
     </div>
     {tab==="pres"&&reclamos.map(r=>{const g=guardados.find(x=>x.id===r.id);return(
-      <Card key={r.id} style={{padding:14,marginBottom:10,borderLeft:`3px solid ${TEAL}`,borderTop:"none"}}>
+      <Card key={r.id} style={{padding:14,marginBottom:10,borderLeft:"3px solid "+TEAL,borderTop:"none"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
           <div><div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{r.p}</div><div style={{display:"flex",gap:8,marginTop:3}}><span style={{background:"#dbeafe",color:"#1d4ed8",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{r.a}</span><span style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{r.id}</span></div></div>
           <div style={{fontSize:18,fontWeight:800,color:NAVY,fontFamily:"monospace"}}>{fmt(r.m)}</div>
         </div>
         <div style={{display:"flex",gap:20,alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:11,color:"#64748b"}}><b>Presentado:</b> {r.fecha} · <b>{r.dias} días</b></span>
+          <span style={{fontSize:11,color:"#64748b"}}><b>Presentado:</b> {r.fecha} &middot; <b>{r.dias} días</b></span>
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}><span style={{fontSize:10,color:"#94a3b8",whiteSpace:"nowrap"}}>SLA {r.a}:</span><SlaBar dias={r.dias} sla={r.sla}/></div>
         </div>
         <div style={{fontSize:11,color:"#475569",background:"#f8fafc",padding:"7px 10px",borderRadius:6,marginBottom:10}}>
@@ -540,18 +552,17 @@ function Seguimiento(){
   </div>;
 }
 
-// APP
-export default function App(){
+function App(){
   const [scr,setScr]=useState("dash");
   const NAV=[["dash","📊","Dashboard Ejecutivo"],["casos","📋","Casos Activos"],["check","✅","Checklist Documental"],["motor","🚦","Motor de Validación"],["seg","💰","Seguimiento y Cobro"]];
   const SCREENS={dash:<Dashboard/>,casos:<Casos/>,check:<Checklist setScr={setScr}/>,motor:<Motor/>,seg:<Seguimiento/>};
   return <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",fontFamily:"system-ui,sans-serif",background:"#F1F5F9"}}>
-    <div style={{background:NAVY,color:"white",height:52,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between",flexShrink:0,borderBottom:`2px solid ${TEAL}`,zIndex:100}}>
+    <div style={{background:NAVY,color:"white",height:52,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid "+TEAL,zIndex:100}}>
       <div style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:-.3}}>
         <div style={{width:8,height:8,background:TEAL2,borderRadius:"50%"}}/>
         <span>ClaimFlow</span>
         <span style={{color:TEAL2,fontWeight:800}}>Minimed</span>
-        <span style={{fontSize:11,color:"#94a3b8",fontWeight:400,marginLeft:4}}>· Gestión de Reclamos</span>
+        <span style={{fontSize:11,color:"#94a3b8",fontWeight:400,marginLeft:4}}>&middot; Gestión de Reclamos</span>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:16,fontSize:12,color:"#cbd5e1"}}>
         <div style={{position:"relative",cursor:"pointer"}}>🔔<span style={{position:"absolute",top:-4,right:-4,background:"#dc2626",color:"white",borderRadius:"50%",width:14,height:14,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>3</span></div>
@@ -563,7 +574,7 @@ export default function App(){
       <div style={{width:200,background:NAVY,flexShrink:0,display:"flex",flexDirection:"column",borderRight:"1px solid rgba(255,255,255,.05)",overflow:"auto"}}>
         <div style={{padding:"16px 0 8px"}}>
           <div style={{fontSize:9,fontWeight:700,color:"#4b6cb7",letterSpacing:1.5,textTransform:"uppercase",padding:"0 16px 8px"}}>Módulos</div>
-          {NAV.map(([id,ic,lb])=><div key={id} onClick={()=>setScr(id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:scr===id?TEAL2:"#94a3b8",fontSize:12,fontWeight:500,background:scr===id?"rgba(0,168,150,.12)":"transparent",borderLeft:scr===id?`3px solid ${TEAL2}`:"3px solid transparent"}}>
+          {NAV.map(([id,ic,lb])=><div key={id} onClick={()=>setScr(id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:scr===id?TEAL2:"#94a3b8",fontSize:12,fontWeight:500,background:scr===id?"rgba(0,168,150,.12)":"transparent",borderLeft:scr===id?"3px solid "+TEAL2:"3px solid transparent"}}>
             <span style={{fontSize:14,width:18,textAlign:"center"}}>{ic}</span>{lb}
           </div>)}
         </div>
@@ -586,3 +597,9 @@ export default function App(){
     </div>
   </div>;
 }
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+  </script>
+</body>
+</html>
