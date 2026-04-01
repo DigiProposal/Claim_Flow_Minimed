@@ -1,0 +1,588 @@
+const { useState, useMemo } = React;
+
+const NAVY = "#1C2951";
+const TEAL = "#028090";
+const TEAL2 = "#00A896";
+
+const ASEG_LIST = ["ASSA","MAPFRE","CIGNA","PALIG","VUMI","WWM"];
+const ASEG_SLA = {ASSA:15,MAPFRE:20,CIGNA:30,PALIG:25,VUMI:30,WWM:45};
+
+const CASOS = [
+  {id:"2026-0312-ASSA",paciente:"Diego Martínez",cedula:"8-456-789",aseguradora:"ASSA",tipoServicio:"Hospitalización",analista:"Steffany Peralta",estado:"En Análisis de Cuenta",semaforo:"amarillo",montoPre:3700,montoAprobado:3480,diasEnProceso:16,prioridad:"Alta",pct:85,preautNumero:"ASSA-2026-00412",preautEstado:"Aprobada",cobertura:"80/20",pendientes:["Firma formulario reclamo paciente"]},
+  {id:"2026-0318-MAPFRE",paciente:"Carmen Rodríguez",cedula:"4-210-532",aseguradora:"MAPFRE",tipoServicio:"Hospitalización + Lab",analista:"Vivi González",estado:"Preautorización Enviada",semaforo:"amarillo",montoPre:5200,montoAprobado:null,diasEnProceso:13,prioridad:"Alta",pct:100,preautNumero:"MAP-2026-01892",preautEstado:"Pendiente",cobertura:null,pendientes:["Sin respuesta de aseguradora (4 días)"]},
+  {id:"2026-0305-CIGNA",paciente:"Roberto Herrera",cedula:"2-188-441",aseguradora:"CIGNA",tipoServicio:"Hospitalización",analista:"Steffany Peralta",estado:"Reclamo Presentado",semaforo:"verde",montoPre:4100,montoAprobado:4100,diasEnProceso:26,prioridad:"Normal",pct:100,preautNumero:"CGN-2026-00234",preautEstado:"Aprobada",cobertura:"100%",pendientes:[]},
+  {id:"2026-0322-ASSA",paciente:"Luisa Caballero",cedula:"6-334-218",aseguradora:"ASSA",tipoServicio:"Curaciones",analista:"Elianis Castillo",estado:"Nuevo Ingreso",semaforo:"rojo",montoPre:1800,montoAprobado:null,diasEnProceso:9,prioridad:"Media",pct:40,preautNumero:null,preautEstado:"Pendiente",cobertura:null,pendientes:["Orden médica sin firma del médico","Formulario preautorización sin completar","Presupuesto no cargado"]},
+  {id:"2026-0298-PALIG",paciente:"Marco Batista",cedula:"8-712-093",aseguradora:"PALIG",tipoServicio:"Visita Médica",analista:"Vivi González",estado:"Cobrado",semaforo:"verde",montoPre:900,montoAprobado:900,diasEnProceso:30,prioridad:"Normal",pct:100,preautNumero:"PAL-2026-00118",preautEstado:"Aprobada",cobertura:"100%",pendientes:[]},
+  {id:"2026-0325-MAPFRE",paciente:"Ana García",cedula:"3-445-882",aseguradora:"MAPFRE",tipoServicio:"Hospitalización",analista:"Steffany Peralta",estado:"Validación de Póliza",semaforo:"rojo",montoPre:6800,montoAprobado:null,diasEnProceso:6,prioridad:"Alta",pct:20,preautNumero:null,preautEstado:"No iniciada",cobertura:null,pendientes:["Verificar exclusión: póliza tiene cláusula de preexistencia","Orden médica pendiente de clínica"]},
+  {id:"2026-0310-CIGNA",paciente:"Jorge Morales",cedula:"8-224-571",aseguradora:"CIGNA",tipoServicio:"Medicamentos",analista:"Elianis Castillo",estado:"En Análisis de Cuenta",semaforo:"verde",montoPre:2200,montoAprobado:2200,diasEnProceso:21,prioridad:"Normal",pct:100,preautNumero:"CGN-2026-00198",preautEstado:"Aprobada",cobertura:"100%",pendientes:[]},
+  {id:"2026-0290-ASSA",paciente:"Patricia Quintero",cedula:"9-118-324",aseguradora:"ASSA",tipoServicio:"Hospitalización + Lab",analista:"Steffany Peralta",estado:"Con Glosa",semaforo:"rojo",montoPre:7400,montoAprobado:7400,diasEnProceso:39,prioridad:"Alta",pct:100,preautNumero:"ASSA-2026-00287",preautEstado:"Aprobada",cobertura:"80/20",pendientes:["Glosa ASSA: factura de laboratorio no coincide con fecha del beneficio"]},
+  {id:"2026-0302-VUMI",paciente:"Sandra López",cedula:"7-123-456",aseguradora:"VUMI",tipoServicio:"Hospitalización",analista:"Vivi González",estado:"En espera de pago",semaforo:"amarillo",montoPre:9200,montoAprobado:9200,diasEnProceso:29,prioridad:"Alta",pct:100,preautNumero:"VMI-2026-00034",preautEstado:"Aprobada",cobertura:"100%",pendientes:["En espera de transferencia bancaria"]},
+  {id:"2026-0315-PALIG",paciente:"Miguel Torres",cedula:"5-678-901",aseguradora:"PALIG",tipoServicio:"Lab + Imágenes",analista:"Elianis Castillo",estado:"Reclamo Presentado",semaforo:"verde",montoPre:1400,montoAprobado:1400,diasEnProceso:16,prioridad:"Normal",pct:100,preautNumero:"PAL-2026-00215",preautEstado:"Aprobada",cobertura:"100%",pendientes:[]},
+];
+
+const CHECKLIST = [
+  {id:1,nombre:"Orden médica formal",req:true,estado:"ok",obs:"J18.9 — Neumonía adquirida en comunidad",valids:{firma:true,sello:true,diagnostico:true,icd:true}},
+  {id:2,nombre:"Formulario de preautorización ASSA",req:true,estado:"pendiente",obs:"Pendiente firma del paciente — enviado el 28/03",valids:{firma:false,sello:true,diagnostico:true}},
+  {id:3,nombre:"Presupuesto / Cotización aprobada",req:true,estado:"ok",obs:"$3,700 — Cotización #CT-2026-0892",valids:{}},
+  {id:4,nombre:"Factura fiscal",req:true,estado:"pendiente",obs:"Solicitada a Leslie García el 29/03 — en proceso",valids:{}},
+  {id:5,nombre:"Historia clínica / Notas de enfermería",req:true,estado:"ok",obs:"Extraída de HOSIX — Período 15/03 al 28/03",valids:{}},
+  {id:6,nombre:"Resultados de laboratorio",req:false,estado:"ok",obs:"3 fechas de muestra adjuntas",valids:{}},
+  {id:7,nombre:"Formulario de reclamo (firma paciente)",req:true,estado:"pendiente",obs:"Enviado por firma digital — sin respuesta (2 días)",valids:{}},
+];
+
+const REGLAS_INIT = [
+  {id:1,desc:"Número de preautorización coincide con el reclamo",tipo:"ok",det:"ASSA-2026-00412 ✓",res:false},
+  {id:2,desc:"Fechas de servicio dentro del período aprobado",tipo:"ok",det:"15/03 – 28/03 dentro de ventana aprobada ✓",res:false},
+  {id:3,desc:"Monto facturado no supera el monto aprobado",tipo:"ok",det:"$3,480 ≤ $3,700 aprobado ✓",res:false},
+  {id:4,desc:"Fecha en resultados de lab coincide con factura",tipo:"alerta",det:"Lab 02/04 — Factura registra 01/04. Verificar.",res:false},
+  {id:5,desc:"Todos los documentos del checklist están adjuntos",tipo:"alerta",det:"Factura fiscal y formulario reclamo pendientes",res:false},
+  {id:6,desc:"Formulario del paciente firmado",tipo:"alerta",det:"Firma pendiente del asegurado",res:false},
+  {id:7,desc:"Ítem 'URRA $45' marcado como gasto no cubierto",tipo:"alerta",det:"Ítem no cubierto detectado. Excluir del reclamo.",res:false},
+  {id:8,desc:"Código ICD coincide con diagnóstico en OM",tipo:"ok",det:"J18.9 coincide en todos los documentos ✓",res:false},
+  {id:9,desc:"Código CPT corresponde al tipo de servicio",tipo:"ok",det:"CPT 99503 — Hospitalización ✓",res:false},
+  {id:10,desc:"Nombre y cédula coinciden en todos los docs",tipo:"ok",det:"Diego Martínez / 8-456-789 ✓",res:false},
+];
+
+const POR_ASEG = [
+  {n:"ASSA",m:48200,c:12,p:34},{n:"MAPFRE",m:35600,c:9,p:25},
+  {n:"CIGNA",m:22400,c:5,p:16},{n:"PALIG",m:19100,c:6,p:13},{n:"Otros",m:17500,c:6,p:12},
+];
+const AGING = [
+  {t:"0-30",m:62400,c:16,bg:"#f0fdf4",bo:"#bbf7d0",col:"#15803d"},
+  {t:"31-60",m:41200,c:11,bg:"#fffbeb",bo:"#fde68a",col:"#a16207"},
+  {t:"61-90",m:24800,c:7,bg:"#fff7ed",bo:"#fdba74",col:"#c2410c"},
+  {t:"+90",m:14400,c:4,bg:"#fef2f2",bo:"#fecaca",col:"#dc2626"},
+];
+
+const fmt = n => "$" + Number(n).toLocaleString("en-US");
+const ini = n => n.split(" ").map(w=>w[0]).join("").slice(0,2);
+
+const SEM_COLOR = {verde:"#16a34a",amarillo:"#d97706",rojo:"#dc2626"};
+const SEM_BG = {verde:"#dcfce7",amarillo:"#fef9c3",rojo:"#fee2e2"};
+const SEM_LABEL = {verde:"Listo",amarillo:"Pendientes",rojo:"Bloqueado"};
+
+function Dot({s,size=10}){
+  return <span style={{width:size,height:size,borderRadius:"50%",background:SEM_COLOR[s],display:"inline-block",flexShrink:0}}/>;
+}
+function SemBadge({s}){
+  return <span style={{background:SEM_BG[s],color:SEM_COLOR[s],padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:700,display:"inline-flex",alignItems:"center",gap:4}}>
+    <Dot s={s} size={7}/>{SEM_LABEL[s]}
+  </span>;
+}
+function EsBadge({e}){
+  const map={"Cobrado":["#ccfbf1","#0f766e"],"Reclamo Presentado":["#dbeafe","#1d4ed8"],"En Análisis de Cuenta":["#e0e7ff","#3730a3"],"Preautorización Enviada":["#fef9c3","#a16207"],"Nuevo Ingreso":["#f1f5f9","#475569"],"Validación de Póliza":["#fee2e2","#dc2626"],"Con Glosa":["#fee2e2","#dc2626"],"En espera de pago":["#fef9c3","#a16207"]};
+  const [bg,cl]=map[e]||["#f1f5f9","#475569"];
+  return <span style={{background:bg,color:cl,padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,whiteSpace:"nowrap"}}>{e}</span>;
+}
+function PBar({p,w=70}){
+  const c=p>=80?"#16a34a":p>=50?"#d97706":"#dc2626";
+  return <div style={{height:5,background:"#e2e8f0",borderRadius:3,overflow:"hidden",width:w,flexShrink:0}}>
+    <div style={{height:"100%",background:c,width:p+"%",borderRadius:3}}/>
+  </div>;
+}
+function Av({name}){
+  return <div style={{width:24,height:24,borderRadius:"50%",background:`linear-gradient(135deg,${TEAL},${NAVY})`,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"white",flexShrink:0}}>{ini(name)}</div>;
+}
+function Btn({ch,v="pri",onClick,dis,style={}}){
+  const st={pri:{background:TEAL,color:"white"},sec:{background:"#f1f5f9",color:"#475569",border:"1px solid #e2e8f0"},suc:{background:"#dcfce7",color:"#16a34a"},dan:{background:"#fee2e2",color:"#dc2626"},dis:{background:"#e2e8f0",color:"#94a3b8",cursor:"not-allowed"}};
+  return <button onClick={dis?undefined:onClick} style={{padding:"6px 13px",borderRadius:7,fontSize:11,fontWeight:600,border:"none",cursor:dis?"not-allowed":"pointer",display:"inline-flex",alignItems:"center",gap:5,fontFamily:"inherit",...(dis?st.dis:st[v]),...style}}>{ch}</button>;
+}
+function Card({ch,style={}}){
+  return <div style={{background:"white",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:`3px solid ${TEAL}`,...style}}>{ch}</div>;
+}
+function ST({ch}){
+  return <div style={{fontSize:11,fontWeight:700,color:NAVY,textTransform:"uppercase",letterSpacing:".8px",marginBottom:10}}>{ch}</div>;
+}
+
+// DRAWER
+function Drawer({caso,onClose}){
+  const [t,setT]=useState("res");
+  const hist=[
+    {f:"31/03 09:15",tx:"Análisis de cuenta completado. Monto aprobado: $3,480"},
+    {f:"29/03 14:22",tx:"Beneficio recibido de ASSA. Cobertura 80/20 confirmada"},
+    {f:"28/03 11:00",tx:"Formulario preautorización enviado al paciente para firma"},
+    {f:"15/03 10:30",tx:"Caso creado. Ingreso del paciente — Hospitalización"},
+  ];
+  const sel={fontSize:11,fontWeight:600,cursor:"pointer",padding:"5px 12px",borderRadius:5};
+  return <>
+    <div onClick={onClose} style={{position:"fixed",top:52,left:0,right:0,bottom:0,background:"rgba(0,0,0,.3)",zIndex:200}}/>
+    <div style={{position:"fixed",top:52,right:0,bottom:0,width:420,background:"white",boxShadow:"-4px 0 20px rgba(0,0,0,.15)",zIndex:201,display:"flex",flexDirection:"column",overflow:"auto"}}>
+      <div style={{background:NAVY,color:"white",padding:"18px 20px",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>{caso.paciente}</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <span style={{fontSize:11,color:"#94a3b8"}}>{caso.id}</span>
+              <SemBadge s={caso.semaforo}/>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.1)",border:"none",color:"white",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:14}}>✕</button>
+        </div>
+        <div style={{display:"flex",gap:2,background:"rgba(255,255,255,.08)",padding:3,borderRadius:7,width:"fit-content"}}>
+          {[["res","Resumen"],["ch","Checklist"],["hi","Historial"]].map(([v,l])=>
+            <div key={v} onClick={()=>setT(v)} style={{...sel,background:t===v?"white":"transparent",color:t===v?NAVY:"rgba(255,255,255,.6)"}}>{l}</div>
+          )}
+        </div>
+      </div>
+      <div style={{padding:18,overflow:"auto"}}>
+        {t==="res" && <>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+            {[["Cédula",caso.cedula],["Servicio",caso.tipoServicio],["Analista",caso.analista],["Prioridad",caso.prioridad],["Días",caso.diasEnProceso+" días"],["Aseguradora",caso.aseguradora]].map(([k,v])=>
+              <div key={k} style={{background:"#f8fafc",borderRadius:7,padding:"8px 10px"}}>
+                <div style={{fontSize:9,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:.5,marginBottom:2}}>{k}</div>
+                <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{v}</div>
+              </div>
+            )}
+          </div>
+          <div style={{background:"#f8fafc",borderRadius:8,padding:12,marginBottom:12}}>
+            <ST ch="Preautorización"/>
+            <div style={{fontSize:11,color:"#475569"}}><b>N°:</b> {caso.preautNumero||"—"} &nbsp;·&nbsp; <b>Estado:</b> {caso.preautEstado} {caso.cobertura&&<>&nbsp;·&nbsp;<b>Cobertura:</b> {caso.cobertura}</>}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+            <div style={{background:"#eff6ff",borderRadius:8,padding:10,textAlign:"center"}}>
+              <div style={{fontSize:9,color:"#6b7280",marginBottom:2}}>MONTO PRE</div>
+              <div style={{fontSize:18,fontWeight:800,color:"#1d4ed8"}}>{fmt(caso.montoPre)}</div>
+            </div>
+            {caso.montoAprobado&&<div style={{background:"#f0fdf4",borderRadius:8,padding:10,textAlign:"center"}}>
+              <div style={{fontSize:9,color:"#6b7280",marginBottom:2}}>APROBADO</div>
+              <div style={{fontSize:18,fontWeight:800,color:"#16a34a"}}>{fmt(caso.montoAprobado)}</div>
+            </div>}
+          </div>
+          {caso.pendientes.length>0&&<>
+            <ST ch="⚠ Pendientes"/>
+            {caso.pendientes.map((p,i)=><div key={i} style={{background:"#fffbeb",borderLeft:"3px solid #d97706",borderRadius:6,padding:"7px 10px",fontSize:11,color:"#475569",marginBottom:6}}>{p}</div>)}
+          </>}
+        </>}
+        {t==="ch" && <>
+          <div style={{fontSize:12,color:"#64748b",marginBottom:8}}>Completado: {caso.pct}%</div>
+          <PBar p={caso.pct} w={200}/>
+          <div style={{height:14}}/>
+          {CHECKLIST.map(doc=><div key={doc.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"#f8fafc",borderRadius:7,marginBottom:6}}>
+            <span style={{fontSize:16}}>{doc.estado==="ok"?"✅":doc.estado==="pendiente"?"⏳":"❌"}</span>
+            <div style={{flex:1,fontSize:12}}>{doc.nombre}</div>
+            <span style={{fontSize:9,fontWeight:600,color:doc.estado==="ok"?"#16a34a":"#a16207"}}>{doc.estado==="ok"?"OK":"Pendiente"}</span>
+          </div>)}
+        </>}
+        {t==="hi" && <div style={{paddingLeft:18,borderLeft:"2px solid #e2e8f0"}}>
+          {hist.map((h,i)=><div key={i} style={{marginBottom:14,position:"relative"}}>
+            <div style={{position:"absolute",left:-22,top:4,width:8,height:8,borderRadius:"50%",background:TEAL}}/>
+            <div style={{fontSize:10,color:"#94a3b8",marginBottom:2}}>{h.f}</div>
+            <div style={{fontSize:12,color:"#475569"}}>{h.tx}</div>
+          </div>)}
+        </div>}
+      </div>
+    </div>
+  </>;
+}
+
+// PANTALLA 1 — DASHBOARD
+function Dashboard(){
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2,letterSpacing:-.4}}>Dashboard Ejecutivo</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Vista gerencial en tiempo real · 31 Abr 2026, 09:42 AM</div>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:14}}>
+      {[
+        {l:"Cartera Total",v:"$142,800",s:"38 casos activos",t:"↑ +12% vs mes ant.",c:NAVY,up:true},
+        {l:"En Proceso",v:"$87,400",s:"23 casos en gestión",t:"↓ −5% vs sem. ant.",c:TEAL,up:false},
+        {l:"Cobrado Este Mes",v:"$55,400",s:"15 casos cerrados",t:"↑ +8% vs mes ant.",c:"#16a34a",up:true},
+        {l:"Días Prom. Cobro",v:"38.2",s:"días reclamo → pago",t:"↓ −2.1 días vs meta",c:"#d97706",up:false},
+      ].map(k=><Card key={k.l} ch={<div style={{padding:"16px 14px"}}>
+        <div style={{fontSize:10,fontWeight:600,color:"#64748b",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>{k.l}</div>
+        <div style={{fontSize:26,fontWeight:800,color:k.c,letterSpacing:-1,lineHeight:1}}>{k.v}</div>
+        <div style={{fontSize:11,color:"#94a3b8",marginTop:4}}>{k.s}</div>
+        <div style={{fontSize:11,fontWeight:600,color:k.up?"#16a34a":"#dc2626",marginTop:6}}>{k.t}</div>
+      </div>}/>)}
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
+      {[
+        {s:"verde",n:8,l:"Listos para envío",m:"$28,400",bg:"#f0fdf4",bo:"#16a34a",c:"#15803d"},
+        {s:"amarillo",n:11,l:"Con pendientes",m:"$39,200",bg:"#fffbeb",bo:"#d97706",c:"#b45309"},
+        {s:"rojo",n:4,l:"Bloqueados",m:"$19,800",bg:"#fef2f2",bo:"#dc2626",c:"#dc2626"},
+      ].map(s=><div key={s.s} style={{background:s.bg,border:`1.5px solid ${s.bo}`,borderRadius:10,padding:16,textAlign:"center"}}>
+        <div style={{fontSize:22,marginBottom:4}}>{s.s==="verde"?"🟢":s.s==="amarillo"?"🟡":"🔴"}</div>
+        <div style={{fontSize:30,fontWeight:800,color:s.c,letterSpacing:-1}}>{s.n}</div>
+        <div style={{fontSize:11,fontWeight:600,color:"#475569",marginBottom:4}}>{s.l}</div>
+        <div style={{fontSize:12,color:"#64748b",fontWeight:700}}>{s.m}</div>
+      </div>)}
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+      <Card ch={<div style={{padding:16}}>
+        <ST ch="Cartera por Aseguradora"/>
+        {POR_ASEG.map(a=><div key={a.n} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+          <div style={{fontSize:11,color:"#475569",fontWeight:500,width:60}}>{a.n}</div>
+          <div style={{flex:1,height:8,background:"#e2e8f0",borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:"100%",background:`linear-gradient(90deg,${TEAL},${TEAL2})`,width:a.p+"%"}}/>
+          </div>
+          <div style={{fontSize:11,color:"#64748b",width:62,textAlign:"right"}}>{fmt(a.m)}</div>
+          <div style={{fontSize:10,color:"#94a3b8",width:28}}>{a.c}</div>
+        </div>)}
+      </div>}/>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        <Card ch={<div style={{padding:16}}>
+          <ST ch="Aging de Cartera"/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {AGING.map(a=><div key={a.t} style={{background:a.bg,border:`1px solid ${a.bo}`,borderRadius:8,padding:"10px 6px",textAlign:"center"}}>
+              <div style={{fontSize:9,fontWeight:700,color:"#64748b",textTransform:"uppercase",marginBottom:4}}>{a.t}d</div>
+              <div style={{fontSize:13,fontWeight:800,color:a.col,letterSpacing:-.5}}>{fmt(a.m)}</div>
+              <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{a.c} casos</div>
+            </div>)}
+          </div>
+        </div>}/>
+        <Card ch={<div style={{padding:16}}>
+          <ST ch="⚠ Alertas Activas"/>
+          {[{m:"3 reclamos sin respuesta > 5 días",c:"#fffbeb",b:"#d97706"},{m:"2 casos con SLA vencido esta semana",c:"#fffbeb",b:"#d97706"},{m:"Patricia Quintero / ASSA — +90 días sin pago. Acción inmediata.",c:"#fef2f2",b:"#dc2626"}].map((a,i)=>
+            <div key={i} style={{background:a.c,borderLeft:`3px solid ${a.b}`,borderRadius:6,padding:"7px 10px",fontSize:11,color:"#475569",marginBottom:6}}>⚠ {a.m}</div>
+          )}
+        </div>}/>
+      </div>
+    </div>
+
+    <Card ch={<div style={{padding:16}}>
+      <ST ch="KPIs de Calidad del Proceso"/>
+      {[{l:"% Aprobados 1er Envío",v:74,m:"meta: 85%",c:"#dc2626"},{l:"% Glosas / Rechazos",v:18,m:"meta: <10%",c:"#dc2626"},{l:"Tasa de Recuperación",v:91.2,m:"meta: 95%",c:"#d97706"}].map(k=>
+        <div key={k.l} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <div style={{fontSize:11,color:"#475569",width:185,flexShrink:0}}>{k.l}</div>
+          <div style={{flex:1,height:7,background:"#e2e8f0",borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:"100%",background:k.c,width:k.v+"%",borderRadius:4}}/>
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:k.c,width:38,textAlign:"right"}}>{k.v}%</div>
+          <div style={{fontSize:10,color:"#94a3b8",width:64}}>{k.m}</div>
+        </div>
+      )}
+    </div>}/>
+  </div>;
+}
+
+// PANTALLA 2 — CASOS ACTIVOS
+function Casos(){
+  const [fA,setFA]=useState("Todas");
+  const [fS,setFS]=useState("Todos");
+  const [busq,setBusq]=useState("");
+  const [tab,setTab]=useState("todos");
+  const [sel,setSel]=useState(null);
+
+  const fil=useMemo(()=>CASOS.filter(c=>{
+    if(fA!=="Todas"&&c.aseguradora!==fA)return false;
+    if(fS!=="Todos"&&c.semaforo!==fS)return false;
+    if(busq&&!c.paciente.toLowerCase().includes(busq.toLowerCase()))return false;
+    if(tab==="bloq"&&c.semaforo!=="rojo")return false;
+    if(tab==="act"&&c.estado==="Cobrado")return false;
+    if(tab==="cob"&&c.estado!=="Cobrado")return false;
+    return true;
+  }),[fA,fS,busq,tab]);
+
+  const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",color:"#1e293b",fontFamily:"inherit",outline:"none"};
+  const tabs=[["todos",`Todos (${CASOS.length})`],["bloq",`🔴 Bloqueados (${CASOS.filter(c=>c.semaforo==="rojo").length})`],["act",`Activos (${CASOS.filter(c=>c.estado!=="Cobrado").length})`],["cob",`Cobrados (${CASOS.filter(c=>c.estado==="Cobrado").length})`]];
+
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Casos Activos</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Board maestro de reclamos — vista operativa del equipo de cartera</div>
+    <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+      <select style={ss} value={fA} onChange={e=>setFA(e.target.value)}>
+        <option>Todas</option>{ASEG_LIST.map(a=><option key={a}>{a}</option>)}
+      </select>
+      <select style={ss} value={fS} onChange={e=>setFS(e.target.value)}>
+        <option>Todos</option><option value="verde">🟢 Verde</option><option value="amarillo">🟡 Amarillo</option><option value="rojo">🔴 Rojo</option>
+      </select>
+      <input placeholder="🔍 Buscar paciente..." value={busq} onChange={e=>setBusq(e.target.value)} style={{...ss,width:180}}/>
+      <Btn ch="+ Nuevo Caso" style={{marginLeft:"auto"}}/>
+    </div>
+    <div style={{display:"flex",gap:2,marginBottom:14,background:"#f1f5f9",padding:3,borderRadius:8,width:"fit-content"}}>
+      {tabs.map(([v,l])=><div key={v} onClick={()=>setTab(v)} style={{padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:tab===v?"white":"transparent",color:tab===v?NAVY:"#64748b",boxShadow:tab===v?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{l}</div>)}
+    </div>
+    <div style={{background:"white",borderRadius:10,boxShadow:"0 1px 4px rgba(0,0,0,.06)",overflow:"auto"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+        <thead>
+          <tr>{["#Caso","Paciente","Aseg.","Servicio","Analista","Estado","🚦","Check.","Días","Monto",""].map(h=><th key={h} style={{background:NAVY,color:"#94a3b8",fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:.8,padding:"10px 12px",textAlign:"left",whiteSpace:"nowrap"}}>{h}</th>)}</tr>
+        </thead>
+        <tbody>
+          {fil.map(c=><tr key={c.id} onClick={()=>setSel(c)} style={{cursor:"pointer"}}>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontSize:10,color:"#64748b",fontFamily:"monospace"}}>{c.id}</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><div style={{fontWeight:600,color:"#1e293b"}}>{c.paciente}</div><div style={{fontSize:10,color:"#94a3b8"}}>{c.cedula}</div></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}>
+              <span style={{background:c.aseguradora==="MAPFRE"?"#fee2e2":"#dbeafe",color:c.aseguradora==="MAPFRE"?"#dc2626":"#1d4ed8",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{c.aseguradora}</span>
+            </td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontSize:11,color:"#475569",maxWidth:120,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.tipoServicio}</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><div style={{display:"flex",alignItems:"center",gap:6}}><Av name={c.analista}/><span style={{fontSize:11,color:"#475569"}}>{c.analista.split(" ")[0]}</span></div></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><EsBadge e={c.estado}/></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",textAlign:"center"}}><Dot s={c.semaforo} size={12}/></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><div style={{display:"flex",alignItems:"center",gap:6}}><PBar p={c.pct}/><span style={{fontSize:10,color:"#94a3b8"}}>{c.pct}%</span></div></td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontFamily:"monospace",fontSize:11,fontWeight:c.diasEnProceso>30?700:400,color:c.diasEnProceso>30?"#dc2626":"#475569"}}>{c.diasEnProceso}d</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9",fontFamily:"monospace",fontWeight:600,color:NAVY}}>{fmt(c.montoPre)}</td>
+            <td style={{padding:"10px 12px",borderBottom:"1px solid #f1f5f9"}}><Btn ch="Ver →" v="sec" onClick={e=>{e.stopPropagation();setSel(c);}}/></td>
+          </tr>)}
+          {fil.length===0&&<tr><td colSpan={11} style={{padding:32,textAlign:"center",color:"#94a3b8"}}>Sin resultados con los filtros aplicados.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    {sel&&<Drawer caso={sel} onClose={()=>setSel(null)}/>}
+  </div>;
+}
+
+// PANTALLA 3 — CHECKLIST
+function Checklist({setScr}){
+  const [exp,setExp]=useState({});
+  const icons={1:"📋",2:"📄",3:"💰",4:"🧾",5:"📂",6:"🔬",7:"✍️"};
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Checklist Documental</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Caso 2026-0312-ASSA · Diego Martínez</div>
+    <div style={{background:`linear-gradient(135deg,${NAVY},${TEAL})`,color:"white",padding:18,borderRadius:10,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:14}}>
+        {[["Caso","2026-0312-ASSA"],["Paciente","Diego Martínez"],["Aseguradora","ASSA"],["Cédula","8-456-789"],["Tipo Servicio","Hospitalización"],["Analista","Steffany Peralta"]].map(([k,v])=>
+          <div key={k}><div style={{fontSize:9,color:"rgba(255,255,255,.55)",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>{k}</div><div style={{color:"white",fontWeight:600,fontSize:12}}>{v}</div></div>
+        )}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{flex:1,height:10,background:"rgba(255,255,255,.15)",borderRadius:5,overflow:"hidden"}}>
+          <div style={{height:"100%",background:"linear-gradient(90deg,#00A896,#16a34a)",width:"85%"}}/>
+        </div>
+        <span style={{color:"white",fontSize:15,fontWeight:700}}>85%</span>
+        <SemBadge s="amarillo"/>
+      </div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16}}>
+      <div>
+        <ST ch="Documentos del Expediente"/>
+        {CHECKLIST.map(doc=><div key={doc.id} style={{border:"1px solid #e2e8f0",borderRadius:9,marginBottom:8,overflow:"hidden"}}>
+          <div onClick={()=>setExp(p=>({...p,[doc.id]:!p[doc.id]}))} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",cursor:"pointer",background:"white"}}>
+            <div style={{width:30,height:30,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,background:doc.estado==="ok"?"#dcfce7":doc.estado==="pendiente"?"#fef9c3":"#fee2e2",flexShrink:0}}>{icons[doc.id]}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{doc.nombre}{doc.req&&<span style={{color:"#dc2626",marginLeft:4}}>*</span>}</div>
+              <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>{doc.obs}</div>
+            </div>
+            <span style={{background:doc.estado==="ok"?"#dcfce7":doc.estado==="pendiente"?"#fef9c3":"#fee2e2",color:doc.estado==="ok"?"#16a34a":doc.estado==="pendiente"?"#a16207":"#dc2626",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600}}>
+              {doc.estado==="ok"?"✅ Validado":doc.estado==="pendiente"?"⏳ Pendiente":"❌ Faltante"}
+            </span>
+            <span style={{fontSize:12,color:"#94a3b8",marginLeft:8}}>{exp[doc.id]?"▲":"▼"}</span>
+          </div>
+          {exp[doc.id]&&<div style={{padding:"10px 14px 14px",background:"#f8fafc",borderTop:"1px solid #f1f5f9"}}>
+            {doc.estado==="ok"&&Object.keys(doc.valids).length>0&&<div style={{marginBottom:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",marginBottom:6}}>Validaciones internas</div>
+              {Object.entries(doc.valids).map(([k,v])=><div key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"#475569",marginBottom:3}}>
+                <span style={{color:v?"#16a34a":"#dc2626",fontWeight:700}}>{v?"✓":"✗"}</span><span style={{textTransform:"capitalize"}}>{k}</span>
+              </div>)}
+            </div>}
+            {doc.estado==="pendiente"&&<div style={{background:"#fffbeb",borderLeft:"3px solid #d97706",borderRadius:6,padding:"7px 10px",fontSize:11,color:"#475569",marginBottom:8}}>⏳ {doc.obs}</div>}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {doc.estado==="ok"&&<><Btn ch="👁 Ver Documento" v="sec"/><Btn ch="↩ Reemplazar" v="sec"/></>}
+              {doc.estado!=="ok"&&<><Btn ch="📤 Cargar Documento"/><Btn ch="🔔 Recordatorio" v="sec"/></>}
+            </div>
+          </div>}
+        </div>)}
+      </div>
+      <div>
+        <ST ch="⚠ Pendientes Activos"/>
+        {[{r:"Paciente",i:"Firma formulario reclamo",d:2},{r:"Leslie García",i:"Factura fiscal",d:2},{r:"Paciente",i:"Firma preautorización ASSA",d:3}].map((p,idx)=>
+          <Card key={idx} style={{padding:14,marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:12,fontWeight:600}}>{p.i}</span><span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>{p.d}d sin resp.</span></div>
+            <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>Responsable: <b>{p.r}</b></div>
+            <Btn ch="🔔 Enviar Recordatorio" v="sec" style={{fontSize:11}}/>
+          </Card>
+        )}
+        <Card style={{padding:14,marginTop:16}}>
+          <ST ch="Solicitar Orden Médica"/>
+          <div style={{marginBottom:10}}>
+            <label style={{fontSize:10,fontWeight:600,color:"#64748b",textTransform:"uppercase",display:"block",marginBottom:4}}>Médico tratante</label>
+            <select style={{width:"100%",padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,fontFamily:"inherit",outline:"none"}}>
+              <option>Dr. Ramón Castillo — Medicina Interna</option><option>Dra. Patricia Vega — Cirugía</option>
+            </select>
+          </div>
+          <Btn ch="📨 Enviar Solicitud a Clínica" style={{width:"100%",justifyContent:"center"}}/>
+        </Card>
+      </div>
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",marginTop:16}}>
+      <Btn ch="← Volver a Casos" v="sec" onClick={()=>setScr("casos")}/>
+      <Btn ch="Motor de Validación →" onClick={()=>setScr("motor")}/>
+    </div>
+  </div>;
+}
+
+// PANTALLA 4 — MOTOR DE VALIDACIÓN
+function Motor(){
+  const [reglas,setReglas]=useState(REGLAS_INIT);
+  const [ejec,setEjec]=useState(false);
+  const [listo,setListo]=useState(true);
+  const [conf,setConf]=useState(false);
+  const alertas=reglas.filter(r=>r.tipo==="alerta"&&!r.res).length;
+  const res=alertas>0?"amarillo":"verde";
+  const HERO={verde:{ic:"✅",ti:"RECLAMO LISTO PARA ENVÍO",su:"Todas las reglas verificadas correctamente",bg:"#f0fdf4",bo:"#16a34a",co:"#15803d"},amarillo:{ic:"⚠️",ti:"RECLAMO CON OBSERVACIONES",su:`${alertas} regla${alertas!==1?"s":""} requieren atención antes del envío`,bg:"#fffbeb",bo:"#d97706",co:"#b45309"}};
+  const h=HERO[res];
+  const run=()=>{setEjec(true);setListo(false);setTimeout(()=>{setEjec(false);setListo(true);},1600);};
+  const resolver=id=>setReglas(r=>r.map(x=>x.id===id?{...x,res:true}:x));
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Motor de Validación</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>10 reglas de consistencia automáticas · Caso 2026-0312-ASSA — Diego Martínez</div>
+    <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:16}}>
+      <div style={{background:"#f8fafc",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"10px 16px",flex:1,fontSize:11,color:"#64748b"}}>
+        <b>Caso:</b> 2026-0312-ASSA &nbsp;·&nbsp; <b>Paciente:</b> Diego Martínez &nbsp;·&nbsp; <b>Aseguradora:</b> ASSA &nbsp;·&nbsp; <b>Monto:</b> $3,480
+      </div>
+      <Btn ch={ejec?<span>⚙ Validando...</span>:"▶ Ejecutar Validación"} onClick={run} dis={ejec} style={{minWidth:170}}/>
+    </div>
+    {listo&&<>
+      <div style={{background:h.bg,border:`2px solid ${h.bo}`,borderRadius:12,padding:24,marginBottom:16,textAlign:"center"}}>
+        <div style={{fontSize:36,marginBottom:8}}>{h.ic}</div>
+        <div style={{fontSize:18,fontWeight:800,color:h.co,letterSpacing:-.5}}>{h.ti}</div>
+        <div style={{fontSize:12,color:"#64748b",marginTop:4}}>{h.su}</div>
+        {res==="amarillo"&&<div style={{marginTop:10,fontSize:11,color:"#92400e",background:"rgba(217,119,6,.1)",padding:"6px 12px",borderRadius:6,display:"inline-block"}}>Puede aprobarse con advertencias activas documentadas</div>}
+      </div>
+      <ST ch={`Resultado por Regla (${reglas.length} verificaciones)`}/>
+      {reglas.map(r=>{
+        const ok=r.tipo==="ok"||r.res;
+        return <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:ok?"#f0fdf4":"#fffbeb",border:`1px solid ${ok?"#bbf7d0":"#fde68a"}`,borderRadius:7,marginBottom:6}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#94a3b8",width:18}}>{r.id}</div>
+          <div style={{fontSize:16,width:20,textAlign:"center"}}>{ok?"✅":"⚠️"}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:500,color:"#475569"}}>
+              {r.desc}
+              {r.res&&<span style={{fontSize:9,color:"#16a34a",fontWeight:700,marginLeft:6,background:"#dcfce7",padding:"2px 6px",borderRadius:10}}>RESUELTA</span>}
+            </div>
+            <div style={{fontSize:10,color:"#94a3b8",fontFamily:"monospace",marginTop:2}}>{r.det}</div>
+          </div>
+          {r.tipo==="alerta"&&!r.res&&<Btn ch="✓ Resolver" v="sec" onClick={()=>resolver(r.id)} style={{fontSize:10,padding:"4px 10px"}}/>}
+        </div>;
+      })}
+      <div style={{display:"flex",gap:10,marginTop:16,justifyContent:"flex-end"}}>
+        {res==="amarillo"&&<><Btn ch="Resolver observaciones" v="sec"/><Btn ch="Aprobar con advertencias →" onClick={()=>setConf(true)}/></>}
+        {res==="verde"&&<Btn ch="✅ Aprobar — Marcar Listo para Envío" style={{background:"#16a34a",padding:"10px 24px",fontSize:13}}/>}
+      </div>
+    </>}
+    {conf&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.4)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"white",borderRadius:12,padding:24,width:380,boxShadow:"0 10px 40px rgba(0,0,0,.2)"}}>
+        <div style={{fontSize:15,fontWeight:700,color:NAVY,marginBottom:12}}>⚠ Confirmar aprobación con advertencias</div>
+        <p style={{fontSize:12,color:"#475569",marginBottom:16}}>Existen {alertas} observación(es) pendiente(s). ¿Confirma que aprueba enviar este reclamo de igual forma?</p>
+        <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+          <Btn ch="Cancelar" v="sec" onClick={()=>setConf(false)}/>
+          <Btn ch="Confirmar y Aprobar" onClick={()=>setConf(false)}/>
+        </div>
+      </div>
+    </div>}
+  </div>;
+}
+
+// PANTALLA 5 — SEGUIMIENTO Y COBRO
+function Seguimiento(){
+  const [tab,setTab]=useState("pres");
+  const [modal,setModal]=useState(null);
+  const [txt,setTxt]=useState("");
+  const [canal,setCanal]=useState("Plataforma ASSA");
+  const [guardados,setGuardados]=useState([]);
+  const reclamos=[
+    {id:"2026-0305-CIGNA",p:"Roberto Herrera",a:"CIGNA",sla:30,dias:5,m:3980,fecha:"26/03/2026",ult:"Case manager confirmó recepción"},
+    {id:"2026-0302-VUMI",p:"Sandra López",a:"VUMI",sla:30,dias:12,m:8800,fecha:"19/03/2026",ult:"En revisión. VUMI solicitó factura adicional"},
+    {id:"2026-0315-PALIG",p:"Miguel Torres",a:"PALIG",sla:25,dias:8,m:1380,fecha:"23/03/2026",ult:"Reclamo recibido. En revisión estándar."},
+    {id:"2026-0318-MAPFRE",p:"Carmen Rodríguez",a:"MAPFRE",sla:20,dias:16,m:5200,fecha:"15/03/2026",ult:"Sin respuesta en los últimos 4 días"},
+    {id:"2026-0290-ASSA",p:"Patricia Quintero",a:"ASSA",sla:15,dias:22,m:7200,fecha:"09/03/2026",ult:"Glosa recibida: discrepancia en fecha de lab"},
+  ];
+  const glosas=[
+    {id:"G1",p:"Patricia Quintero",a:"ASSA",m:7200,g:340,motivo:"Factura de laboratorio no coincide con fecha del beneficio",est:"En apelación"},
+    {id:"G2",p:"Luisa Caballero",a:"ASSA",m:1800,g:180,motivo:"Código CPT no corresponde al servicio de curaciones",est:"Pendiente respuesta"},
+    {id:"G3",p:"Ana García",a:"MAPFRE",m:6800,g:850,motivo:"Exclusión de preexistencia aplicada al procedimiento",est:"Aceptada"},
+  ];
+  const cobrados=CASOS.filter(c=>c.estado==="Cobrado");
+  const guardar=()=>{if(!txt)return;setGuardados(p=>[{id:modal.id,canal,txt,f:new Date().toLocaleDateString("es-PA")},...p]);setModal(null);setTxt("");};
+  const ss={padding:"7px 10px",border:"1.5px solid #e2e8f0",borderRadius:7,fontSize:12,background:"white",fontFamily:"inherit",outline:"none",width:"100%"};
+  const TABS=[["pres",`Presentados (${reclamos.length})`],["glosas",`Con Glosa (${glosas.length})`],["cob",`Cobrados (${cobrados.length})`]];
+  const SlaBar=({dias,sla})=>{const pct=Math.min(100,(dias/sla)*100);const c=dias>sla?"#dc2626":dias>sla-5?"#d97706":"#16a34a";return <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:80,height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden",flexShrink:0}}><div style={{height:"100%",background:c,width:pct+"%"}}/></div><span style={{fontSize:10,color:c,fontWeight:700,fontFamily:"monospace"}}>{dias>sla?`+${dias-sla}d 🔴`:`${sla-dias}d rest.`}</span></div>;};
+  return <div>
+    <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:2}}>Seguimiento y Cobro</div>
+    <div style={{fontSize:12,color:"#64748b",marginBottom:16}}>Control de reclamos presentados · SLA por aseguradora · Gestión de glosas</div>
+    <div style={{display:"flex",gap:2,marginBottom:14,background:"#f1f5f9",padding:3,borderRadius:8,width:"fit-content"}}>
+      {TABS.map(([v,l])=><div key={v} onClick={()=>setTab(v)} style={{padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:tab===v?"white":"transparent",color:tab===v?NAVY:"#64748b",boxShadow:tab===v?"0 1px 3px rgba(0,0,0,.1)":"none"}}>{l}</div>)}
+    </div>
+    {tab==="pres"&&reclamos.map(r=>{const g=guardados.find(x=>x.id===r.id);return(
+      <Card key={r.id} style={{padding:14,marginBottom:10,borderLeft:`3px solid ${TEAL}`,borderTop:"none"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <div><div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{r.p}</div><div style={{display:"flex",gap:8,marginTop:3}}><span style={{background:"#dbeafe",color:"#1d4ed8",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{r.a}</span><span style={{fontSize:11,color:"#94a3b8",fontFamily:"monospace"}}>{r.id}</span></div></div>
+          <div style={{fontSize:18,fontWeight:800,color:NAVY,fontFamily:"monospace"}}>{fmt(r.m)}</div>
+        </div>
+        <div style={{display:"flex",gap:20,alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:11,color:"#64748b"}}><b>Presentado:</b> {r.fecha} · <b>{r.dias} días</b></span>
+          <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}><span style={{fontSize:10,color:"#94a3b8",whiteSpace:"nowrap"}}>SLA {r.a}:</span><SlaBar dias={r.dias} sla={r.sla}/></div>
+        </div>
+        <div style={{fontSize:11,color:"#475569",background:"#f8fafc",padding:"7px 10px",borderRadius:6,marginBottom:10}}>
+          💬 {g?g.txt:r.ult}{g&&<span style={{fontSize:9,color:"#94a3b8",marginLeft:6}}>— actualizado {g.f}</span>}
+        </div>
+        <div style={{display:"flex",gap:8}}><Btn ch="📝 Registrar Seguimiento" onClick={()=>setModal(r)}/><Btn ch="✓ Marcar Pagado" v="suc"/><Btn ch="⚠ Reportar Glosa" v="dan"/></div>
+      </Card>
+    );})}
+    {tab==="glosas"&&glosas.map(g=><Card key={g.id} style={{padding:14,marginBottom:10,borderTop:"none",borderLeft:"3px solid #d97706"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+        <div><div style={{fontSize:13,fontWeight:700}}>{g.p}</div><span style={{background:"#fef9c3",color:"#a16207",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{g.a}</span></div>
+        <div style={{textAlign:"right"}}><div style={{fontSize:15,fontWeight:800,color:NAVY,fontFamily:"monospace"}}>{fmt(g.m)}</div><div style={{fontSize:11,color:"#dc2626",fontWeight:600}}>Glosado: {fmt(g.g)}</div></div>
+      </div>
+      <div style={{fontSize:11,color:"#475569",marginBottom:10}}><b>Motivo:</b> {g.motivo}</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{background:g.est==="En apelación"?"#fef9c3":g.est==="Aceptada"?"#dcfce7":"#f1f5f9",color:g.est==="En apelación"?"#a16207":g.est==="Aceptada"?"#16a34a":"#475569",padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:600}}>{g.est}</span>
+        <Btn ch="Gestionar Glosa →" v="sec"/>
+      </div>
+    </Card>)}
+    {tab==="cob"&&cobrados.map(c=><Card key={c.id} style={{padding:14,marginBottom:10,borderTop:"none",borderLeft:"3px solid #16a34a"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div><div style={{fontSize:13,fontWeight:700}}>{c.paciente}</div><div style={{display:"flex",gap:8,marginTop:3}}><span style={{background:"#dcfce7",color:"#16a34a",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>✅ Cobrado</span><span style={{background:"#f1f5f9",color:"#475569",padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600}}>{c.aseguradora}</span></div></div>
+        <div style={{textAlign:"right"}}><div style={{fontSize:16,fontWeight:800,color:"#16a34a",fontFamily:"monospace"}}>{fmt(c.montoAprobado||c.montoPre)}</div><div style={{fontSize:10,color:"#94a3b8"}}>{c.diasEnProceso} días de ciclo</div></div>
+      </div>
+    </Card>)}
+    {modal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.4)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"white",borderRadius:12,padding:24,width:400,boxShadow:"0 10px 40px rgba(0,0,0,.2)"}}>
+        <div style={{fontSize:15,fontWeight:700,color:NAVY,marginBottom:16}}>📝 Registrar Seguimiento — {modal.p}</div>
+        {[["Canal",<select style={ss} value={canal} onChange={e=>setCanal(e.target.value)}><option>Plataforma ASSA</option><option>Correo electrónico</option><option>Teléfono</option><option>Chat con case manager</option></select>],["Resultado",<textarea placeholder='Ej: "Case manager confirmó recepción del expediente"' value={txt} onChange={e=>setTxt(e.target.value)} style={{...ss,resize:"vertical",minHeight:70}}/>],["Próximo seguimiento",<input type="date" style={ss}/>]].map(([l,f])=>
+          <div key={l} style={{marginBottom:12}}><label style={{fontSize:10,fontWeight:600,color:"#64748b",textTransform:"uppercase",display:"block",marginBottom:4,letterSpacing:.5}}>{l}</label>{f}</div>
+        )}
+        <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+          <Btn ch="Cancelar" v="sec" onClick={()=>setModal(null)}/><Btn ch="💾 Guardar Seguimiento" onClick={guardar}/>
+        </div>
+      </div>
+    </div>}
+  </div>;
+}
+
+// APP
+export default function App(){
+  const [scr,setScr]=useState("dash");
+  const NAV=[["dash","📊","Dashboard Ejecutivo"],["casos","📋","Casos Activos"],["check","✅","Checklist Documental"],["motor","🚦","Motor de Validación"],["seg","💰","Seguimiento y Cobro"]];
+  const SCREENS={dash:<Dashboard/>,casos:<Casos/>,check:<Checklist setScr={setScr}/>,motor:<Motor/>,seg:<Seguimiento/>};
+  return <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",fontFamily:"system-ui,sans-serif",background:"#F1F5F9"}}>
+    <div style={{background:NAVY,color:"white",height:52,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between",flexShrink:0,borderBottom:`2px solid ${TEAL}`,zIndex:100}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,fontSize:15,fontWeight:700,letterSpacing:-.3}}>
+        <div style={{width:8,height:8,background:TEAL2,borderRadius:"50%"}}/>
+        <span>ClaimFlow</span>
+        <span style={{color:TEAL2,fontWeight:800}}>Minimed</span>
+        <span style={{fontSize:11,color:"#94a3b8",fontWeight:400,marginLeft:4}}>· Gestión de Reclamos</span>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:16,fontSize:12,color:"#cbd5e1"}}>
+        <div style={{position:"relative",cursor:"pointer"}}>🔔<span style={{position:"absolute",top:-4,right:-4,background:"#dc2626",color:"white",borderRadius:"50%",width:14,height:14,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>3</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><Av name="Steffany Peralta"/><span>Steffany Peralta</span><span style={{color:"#4b6cb7",fontSize:10}}>Analista Senior</span></div>
+        <span style={{color:"#4b6cb7",fontSize:10}}>| Abr 2026</span>
+      </div>
+    </div>
+    <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+      <div style={{width:200,background:NAVY,flexShrink:0,display:"flex",flexDirection:"column",borderRight:"1px solid rgba(255,255,255,.05)",overflow:"auto"}}>
+        <div style={{padding:"16px 0 8px"}}>
+          <div style={{fontSize:9,fontWeight:700,color:"#4b6cb7",letterSpacing:1.5,textTransform:"uppercase",padding:"0 16px 8px"}}>Módulos</div>
+          {NAV.map(([id,ic,lb])=><div key={id} onClick={()=>setScr(id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:scr===id?TEAL2:"#94a3b8",fontSize:12,fontWeight:500,background:scr===id?"rgba(0,168,150,.12)":"transparent",borderLeft:scr===id?`3px solid ${TEAL2}`:"3px solid transparent"}}>
+            <span style={{fontSize:14,width:18,textAlign:"center"}}>{ic}</span>{lb}
+          </div>)}
+        </div>
+        <div style={{height:1,background:"rgba(255,255,255,.07)",margin:"8px 16px"}}/>
+        <div style={{padding:"8px 0"}}>
+          <div style={{fontSize:9,fontWeight:700,color:"#4b6cb7",letterSpacing:1.5,textTransform:"uppercase",padding:"0 16px 8px"}}>Sistema</div>
+          {[["📚","Base de Conocimiento"],["⚙","Configuración"]].map(([ic,lb])=><div key={lb} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 16px",cursor:"pointer",color:"#94a3b8",fontSize:12,fontWeight:500}}><span style={{fontSize:14,width:18,textAlign:"center"}}>{ic}</span>{lb}</div>)}
+        </div>
+        <div style={{padding:14,marginTop:"auto"}}>
+          <div style={{background:"rgba(0,168,150,.1)",border:"1px solid rgba(0,168,150,.2)",borderRadius:8,padding:10}}>
+            <div style={{fontSize:9,color:TEAL2,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>Cartera Activa</div>
+            <div style={{fontSize:18,fontWeight:800,color:"white",fontFamily:"monospace"}}>$142,800</div>
+            <div style={{fontSize:10,color:"#64748b",marginTop:2}}>38 casos en gestión</div>
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1,overflow:"auto",padding:20}}>
+        {SCREENS[scr]||<div style={{padding:32,textAlign:"center",color:"#94a3b8"}}>Módulo en construcción</div>}
+      </div>
+    </div>
+  </div>;
+}
